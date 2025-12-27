@@ -28,7 +28,7 @@
         #page-explore { background: #000; cursor: crosshair; }
         .sky-world {
             position: absolute; width: 5000px; height: 3000px;
-            background: url('bg1.png') center/cover, radial-gradient(circle at center, #1b2735 0%, #05070a 100%);
+            background: radial-gradient(circle at center, #1b2735 0%, #05070a 100%);
             top: 0; left: 0; transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
         .ground-overlay {
@@ -60,11 +60,11 @@
         .key-hint { background: rgba(255,255,255,0.1); padding: 8px 15px; border-radius: 10px; border: 1px solid white; font-size: 0.8rem; cursor: pointer; }
 
         .const-reference {
-            position: fixed; bottom: 30px; right: 30px; width: 200px; height: 200px;
+            position: fixed; bottom: 30px; right: 30px; width: 160px; height: 160px;
             background: rgba(10, 20, 40, 0.9); border: 2px solid var(--accent); border-radius: 12px;
             display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 40;
         }
-        .const-reference svg { width: 140px; height: 140px; }
+        .const-reference svg { width: 100px; height: 100px; }
 
         .part-drop {
             position: fixed; top: -50px; font-size: 3rem; z-index: 100;
@@ -207,22 +207,20 @@
                     container.appendChild(dot);
                 });
             });
-            // 初始化画布
-            drawAllLines();
             requestAnimationFrame(gameLoop);
         }
 
         function handleStarClick(cIdx, sIdx, el) {
-            // 只有当望远镜对准当前星座，且星座未完成时，才允许点击
-            if (completedConsts.includes(cIdx)) return;
-            if (activeIdx === -1) return; // 还没有对准任何星座
-            if (activeIdx !== cIdx) return; // 对准的不是这个星座
+            if (activeIdx !== cIdx || completedConsts.includes(cIdx)) return;
+            if (currentPath.includes(sIdx)) return;
 
             currentPath.push(sIdx);
             el.classList.add('active');
             
-            // 重新绘制所有连线
-            drawAllLines();
+            // 只连接最近的两个点
+            if (currentPath.length > 1) {
+                drawLines(currentPath[currentPath.length - 2], sIdx);
+            }
 
             // 检查是否完成所有星星
             if (currentPath.length === CONSTELLATIONS[cIdx].stars.length) {
@@ -231,7 +229,6 @@
                     completedConsts.push(cIdx);
                     spawnPart(CONSTELLATIONS[cIdx].part);
                     currentPath = [];
-                    drawAllLines(); // 重绘所有连线（包括完成的）
                     if (completedConsts.length === 3) handleWin();
                 } else {
                     // 连线错误，重置当前星座
@@ -239,24 +236,42 @@
                     document.querySelectorAll('.star-dot.active').forEach(dot => {
                         dot.classList.remove('active');
                     });
-                    drawAllLines(); // 重绘完成的星座连线
+                    drawLines(); // 清除错误的连线
                 }
             }
         }
 
         function validateConstellationConnection(cIdx) {
-            // 简化验证：只要点亮了所有星星就算完成
-            return currentPath.length === CONSTELLATIONS[cIdx].stars.length;
+            const constellation = CONSTELLATIONS[cIdx];
+            const connections = [];
+            
+            // 构建当前连接路径
+            for (let i = 0; i < currentPath.length - 1; i++) {
+                const from = currentPath[i];
+                const to = currentPath[i + 1];
+                connections.push([from, to]);
+            }
+            
+            // 检查是否包含所有必需的连接（忽略顺序）
+            const requiredConnections = constellation.connections;
+            for (let required of requiredConnections) {
+                const found = connections.some(conn => 
+                    (conn[0] === required[0] && conn[1] === required[1]) ||
+                    (conn[0] === required[1] && conn[1] === required[0])
+                );
+                if (!found) return false;
+            }
+            
+            return true;
         }
 
-        // 绘制所有连线（包括已完成和当前）
-        function drawAllLines() {
+        function drawLines(lastIndex = -1, currentIndex = -1) {
             const canvas = document.getElementById('line-canvas');
             canvas.width = 5000; canvas.height = 3000;
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0,0,5000,3000);
             
-            // 绘制已完成星座的线（实线）
+            // 绘制已完成星座的线
             ctx.strokeStyle = "rgba(255, 204, 0, 0.7)";
             ctx.lineWidth = 4;
             ctx.setLineDash([]);
@@ -272,18 +287,26 @@
                 });
             });
 
-            // 绘制当前正在连接的线（虚线）
-            if (activeIdx !== -1 && currentPath.length > 1) {
+            // 绘制当前正在连接的线
+            if (activeIdx !== -1 && currentPath.length > 0) {
                 ctx.strokeStyle = "rgba(255, 204, 0, 0.7)";
                 ctx.lineWidth = 4;
                 ctx.setLineDash([10, 5]);
                 
-                // 绘制当前路径的所有连线
-                for (let i = 1; i < currentPath.length; i++) {
+                if (lastIndex !== -1 && currentIndex !== -1) {
+                    // 只连接最近的两个点
                     ctx.beginPath();
-                    ctx.moveTo(CONSTELLATIONS[activeIdx].stars[currentPath[i-1]].x, CONSTELLATIONS[activeIdx].stars[currentPath[i-1]].y);
-                    ctx.lineTo(CONSTELLATIONS[activeIdx].stars[currentPath[i]].x, CONSTELLATIONS[activeIdx].stars[currentPath[i]].y);
+                    ctx.moveTo(CONSTELLATIONS[activeIdx].stars[lastIndex].x, CONSTELLATIONS[activeIdx].stars[lastIndex].y);
+                    ctx.lineTo(CONSTELLATIONS[activeIdx].stars[currentIndex].x, CONSTELLATIONS[activeIdx].stars[currentIndex].y);
                     ctx.stroke();
+                } else {
+                    // 绘制已有的连接
+                    for (let i = 1; i < currentPath.length; i++) {
+                        ctx.beginPath();
+                        ctx.moveTo(CONSTELLATIONS[activeIdx].stars[currentPath[i-1]].x, CONSTELLATIONS[activeIdx].stars[currentPath[i-1]].y);
+                        ctx.lineTo(CONSTELLATIONS[activeIdx].stars[currentPath[i]].x, CONSTELLATIONS[activeIdx].stars[currentPath[i]].y);
+                        ctx.stroke();
+                    }
                 }
             }
         }
@@ -328,17 +351,17 @@
         function renderRefSvg(data) {
             const svg = document.getElementById('ref-svg');
             const first = data.stars[0];
-            const scale = 0.06; // 放大缩放比例
+            const scale = 0.03; // 缩小比例以适应SVG视图框
             svg.innerHTML = '';
             
             // 绘制星点
             data.stars.forEach(s => {
-                const x = (s.x - first.x) * scale + 70;
-                const y = (s.y - first.y) * scale + 70;
+                const x = (s.x - first.x) * scale + 50;
+                const y = (s.y - first.y) * scale + 50;
                 const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
                 circle.setAttribute('cx', x);
                 circle.setAttribute('cy', y);
-                circle.setAttribute('r', '4');
+                circle.setAttribute('r', '3');
                 circle.setAttribute('fill', 'white');
                 svg.appendChild(circle);
             });
@@ -346,12 +369,12 @@
             // 按照正确的连接顺序绘制连线
             data.connections.forEach(conn => {
                 const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                line.setAttribute('x1', (data.stars[conn[0]].x - first.x) * scale + 70);
-                line.setAttribute('y1', (data.stars[conn[0]].y - first.y) * scale + 70);
-                line.setAttribute('x2', (data.stars[conn[1]].x - first.x) * scale + 70);
-                line.setAttribute('y2', (data.stars[conn[1]].y - first.y) * scale + 70);
+                line.setAttribute('x1', (data.stars[conn[0]].x - first.x) * scale + 50);
+                line.setAttribute('y1', (data.stars[conn[0]].y - first.y) * scale + 50);
+                line.setAttribute('x2', (data.stars[conn[1]].x - first.x) * scale + 50);
+                line.setAttribute('y2', (data.stars[conn[1]].y - first.y) * scale + 50);
                 line.setAttribute('stroke', 'var(--accent)');
-                line.setAttribute('stroke-width', '3');
+                line.setAttribute('stroke-width', '2');
                 svg.appendChild(line);
             });
         }
