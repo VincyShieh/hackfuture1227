@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>视界迷宫 - 丝滑拖拽视角</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none;
+      touch-action: none; /* 禁用浏览器默认拖拽 */
+    }
+    body {
+      background: linear-gradient(135deg, #f5e6fa, #e6f0ff);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow: hidden;
+      font-family: "Helvetica Neue", Arial, sans-serif;
+    }
+    #game {
+      width: 340px;
+      height: 500px;
+      position: relative;
+      perspective: 900px;
+      border-radius: 20px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+      overflow: hidden;
+      background: #fdf9ff;
+    }
+
+    /* 3D 场景容器 */
+    #scene {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      transition: transform 0s; /* 关闭过渡，实现丝滑跟随 */
+    }
+
+    .platform {
+      position: absolute;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    #player {
+      width: 22px;
+      height: 22px;
+      background: #ff6b9d;
+      border-radius: 50%;
+      position: absolute;
+      z-index: 20;
+      transition: left 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), 
+                  top 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    #goal {
+      width: 26px;
+      height: 26px;
+      background: #6eceda;
+      border-radius: 6px;
+      position: absolute;
+      z-index: 15;
+    }
+
+    #win-message {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(253, 249, 255, 0.96);
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: #8e7cc3;
+      z-index: 100;
+      font-size: 18px;
+      text-align: center;
+      padding: 30px;
+    }
+    #win-message h2 {
+      color: #ff6b9d;
+      margin-bottom: 16px;
+    }
+    #reset-btn {
+      margin-top: 20px;
+      padding: 8px 24px;
+      background: #8e7cc3;
+      color: white;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="game">
+    <div id="scene">
+      <!-- 平台 A -->
+      <div class="platform" style="
+        width: 80px; height: 20px;
+        left: 60px; top: 320px;
+        background: #a29bff;
+        transform: translateZ(0);
+      "></div>
+      
+      <!-- 平台 B（初始错位） -->
+      <div class="platform" style="
+        width: 80px; height: 20px;
+        left: 200px; top: 320px;
+        background: #c5aefb;
+        transform: translateZ(0);
+      "></div>
+
+      <!-- 隐藏平台（需视角对齐才“连接”） -->
+      <div class="platform" style="
+        width: 100px; height: 20px;
+        left: 120px; top: 220px;
+        background: #8e7cc3;
+        transform: translateZ(60px) rotateX(0);
+      "></div>
+
+      <div id="player" style="left: 70px; top: 300px;"></div>
+      <div id="goal" style="left: 147px; top: 200px;"></div>
+    </div>
+
+    <div id="win-message">
+      <h2>你解开了视界的谜题！</h2>
+      <p>有时候，答案只差一个角度看世界。</p>
+      <button id="reset-btn">再玩一次</button>
+    </div>
+  </div>
+
+  <script>
+    const scene = document.getElementById('scene');
+    const player = document.getElementById('player');
+    const goal = document.getElementById('goal');
+    const winMessage = document.getElementById('win-message');
+
+    // 初始相机角度
+    let rotX = 10;   // 俯仰角
+    let rotY = -10;  // 偏航角
+    let isDragging = false;
+    let startX, startY;
+
+    // 更新场景旋转
+    function updateCamera() {
+      scene.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+    }
+    updateCamera();
+
+    // === 拖拽控制视角 ===
+    function handleStart(x, y) {
+      isDragging = true;
+      startX = x;
+      startY = y;
+    }
+
+    function handleMove(x, y) {
+      if (!isDragging) return;
+      const dx = x - startX;
+      const dy = y - startY;
+      rotY += dx * 0.5;
+      rotX -= dy * 0.5;
+
+      // 限制俯仰角，避免翻转
+      rotX = Math.max(-20, Math.min(40, rotX));
+
+      updateCamera();
+      startX = x;
+      startY = y;
+    }
+
+    function handleEnd() {
+      isDragging = false;
+    }
+
+    // 鼠标事件
+    scene.addEventListener('mousedown', (e) => {
+      handleStart(e.clientX, e.clientY);
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      handleMove(e.clientX, e.clientY);
+    });
+
+    window.addEventListener('mouseup', () => {
+      handleEnd();
+    });
+
+    // 触屏事件
+    scene.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      handleStart(touch.clientX, touch.clientY);
+    });
+
+    window.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      handleMove(touch.clientX, touch.clientY);
+    });
+
+    window.addEventListener('touchend', () => {
+      handleEnd();
+    });
+
+    // === 点击移动角色 ===
+    scene.addEventListener('click', (e) => {
+      if (winMessage.style.display === 'flex') return;
+
+      const gameRect = document.getElementById('game').getBoundingClientRect();
+      const clickX = e.clientX - gameRect.left;
+      const clickY = e.clientY - gameRect.top;
+
+      // 简化：允许在 Y≈320 或 Y≈220 区域点击（即平台所在行）
+      if (Math.abs(clickY - 320) < 40 || Math.abs(clickY - 220) < 40) {
+        player.style.left = (clickX - 11) + 'px';
+        player.style.top = (clickY - 11) + 'px';
+
+        // 检测是否到达终点
+        const pRect = player.getBoundingClientRect();
+        const gRect = goal.getBoundingClientRect();
+        if (
+          pRect.left < gRect.right &&
+          pRect.right > gRect.left &&
+          pRect.top < gRect.bottom &&
+          pRect.bottom > gRect.top
+        ) {
+          setTimeout(() => {
+            winMessage.style.display = 'flex';
+          }, 300);
+        }
+      }
+    });
+
+    // 重置游戏
+    document.getElementById('reset-btn').addEventListener('click', () => {
+      rotX = 10;
+      rotY = -10;
+      updateCamera();
+      player.style.left = '70px';
+      player.style.top = '300px';
+      winMessage.style.display = 'none';
+    });
+  </script>
+</body>
+</html>
