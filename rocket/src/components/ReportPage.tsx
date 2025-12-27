@@ -126,12 +126,19 @@ const ReportPage: React.FC<ReportPageProps> = ({ config, onPlayAgain }) => {
           >
             🔧 再次拼装
           </button>
-          
+
           <button
             onClick={handleShare}
             className="px-8 py-4 bg-white hover:bg-gray-100 text-space-blue text-lg font-bold rounded-full shadow-lg transform transition-all duration-300 hover:scale-105 active:scale-95 border-2 border-space-blue"
           >
             📤 分享火箭
+          </button>
+
+          <button
+            onClick={() => window.location.href = '../pilot/spacetrip_game.html'}
+            className="px-8 py-4 bg-purple-600 hover:bg-purple-700 text-white text-lg font-bold rounded-full shadow-lg transform transition-all duration-300 hover:scale-105 active:scale-95"
+          >
+            🚀 继续探索-宇宙漫游
           </button>
         </div>
 
