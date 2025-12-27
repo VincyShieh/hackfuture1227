@@ -134,7 +134,10 @@
     <section id="page-wall" class="page">
         <h2 style="color: var(--accent); margin-top: 50px;">⭐ 我的星座标本墙 ⭐</h2>
         <div class="wall-grid" id="wall-grid"></div>
-        <button class="btn" onclick="showFinalMentor()">面见导师</button>
+        <div style="margin-top: 40px;">
+            <button class="btn" onclick="showFinalMentor()" style="margin-right: 20px;">面见导师</button>
+            <!-- <button class="btn" onclick="goToNextLevel()">继续探索-启航研究</button> -->
+        </div>
     </section>
 
     <div class="mentor-overlay" id="mentor-overlay">
@@ -142,7 +145,10 @@
             <img src="https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&q=80&w=200" class="mentor-img">
             <h3 style="color: var(--accent); margin-bottom: 20px;">王亚平导师的寄语</h3>
             <p id="speech-text" style="line-height: 1.8; font-size: 1.15rem; color: #eee;"></p>
-            <button class="btn" style="margin-top: 40px;" onclick="location.reload()">重新探索</button>
+            <div style="margin-top: 40px; display: flex; gap: 20px; justify-content: center;">
+                <button class="btn" onclick="location.reload()">重新探索</button>
+                <button class="btn" onclick="goToNextLevel()">继续探索-启航研究</button>
+            </div>
         </div>
     </div>
 
@@ -399,7 +405,13 @@
 
         function showFinalMentor() {
             document.getElementById('mentor-overlay').style.display = 'flex';
-            document.getElementById('speech-text').innerText = "“你看，当所有的星点连成一线，寂静的星空就有了名字。你刚刚亲手点亮的不仅是星座，更是通往科学殿堂的阶梯。每一个女孩都是一颗独特的星，当你敢于在黑暗中发光，整个宇宙都会为你闪烁。”";
+            document.getElementById('speech-text').innerText = "你看，当所有的星点连成一线，寂静的星空就有了名字。你刚刚亲手点亮的不仅是星座，更是通往科学殿堂的阶梯。每一个女孩都是一颗独特的星，当你敢于在黑暗中发光，整个宇宙都会为你闪烁。保持这份探索的渴望，去书写属于你的星际航行志吧！";
+        }
+
+        // 跳转到下一关
+        function goToNextLevel() {
+            // 直接跳转到第二关
+            window.location.href = '../index.html#level2';
         }
     </script>
 </body>

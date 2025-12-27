@@ -255,8 +255,8 @@
                 box-shadow: 0 0 60px currentColor, 0 0 100px currentColor;
             }
             100% {
-                transform: scale(1.5);
-                opacity: 0;
+                transform: scale(1);
+                box-shadow: 0 0 20px currentColor;
             }
         }
 
@@ -509,12 +509,17 @@
 
         // 跳转到关卡
         function goToLevel(level) {
+            // 第二关直接跳转到 React 开发服务器
+            if (level === 2) {
+                window.location.href = 'http://localhost:5173';
+                return;
+            }
+
             const gameFrame = document.getElementById('gameFrame');
 
             // 根据关卡设置不同的iframe地址
             const levelUrls = {
                 1: 'star/star_date.html',
-                2: 'rocket/rocket-game/rocket-single.html',
                 3: 'pilot/spacetrip_game.html'
             };
 
@@ -549,8 +554,8 @@
             const message = event.data;
 
             if (message === 'level1Complete') {
-                // 第一关完成，可以跳转到第二关或返回主菜单
-                showLevelCompleteDialog(1);
+                // 第一关完成，直接跳转到第二关
+                startTransition(2);
             } else if (message === 'level2Complete') {
                 // 第二关完成
                 showLevelCompleteDialog(2);
@@ -598,7 +603,7 @@
             overlay.classList.remove('active');
             document.getElementById('transitionAnimation').classList.remove('active');
 
-            // 重置门的状态
+            // 移除门的点击动画类，但保留门的显示
             document.querySelectorAll('.door').forEach(door => {
                 door.classList.remove('clicked');
             });
@@ -607,6 +612,17 @@
         // 初始化
         window.onload = function() {
             initStars();
+
+            // 检查URL hash，直接进入对应关卡
+            const hash = window.location.hash;
+            if (hash === '#level1') {
+                selectLevel(1);
+            } else if (hash === '#level2') {
+                // 第二关直接跳转到 React 开发服务器
+                window.location.href = 'http://localhost:5173';
+            } else if (hash === '#level3') {
+                selectLevel(3);
+            }
         };
     </script>
 </body>
