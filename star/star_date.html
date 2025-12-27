@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>星际建造师 - 星星的邀约</title>
+    <style>
+        :root {
+            --space-bg: #05070a;
+            --primary: #ff4d4d; /* 红领巾色 */
+            --accent: #ffcc00;
+            --telescope-size: 400px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', "Microsoft YaHei", sans-serif; }
+        body { background: var(--space-bg); color: white; height: 100vh; overflow: hidden; }
+
+        .page { display: none; height: 100vh; width: 100vw; position: absolute; top: 0; left: 0; }
+        .page.active { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+        /* --- 画面一：关卡开启 --- */
+        #page-intro {
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('bg.png') center/cover;
+        }
+        .intro-card { background: rgba(0,0,0,0.7); padding: 40px; border-radius: 20px; border: 1px solid var(--accent); text-align: center; backdrop-filter: blur(10px); }
+
+        /* --- 画面二/三：游戏空间 --- */
+        #page-explore { background: #000; cursor: crosshair; }
+        .sky-world {
+            position: absolute; width: 5000px; height: 3000px;
+            background: url('bg1.png') center/cover, radial-gradient(circle at center, #1b2735 0%, #05070a 100%);
+            top: 0; left: 0; transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        .ground-overlay {
+            position: absolute; width: 100vw; height: 100vh; bottom: 0; left: 0;
+            background: url('https://images.unsplash.com/photo-1590333746438-2b1950005d7b?q=80&w=2070&auto=format&fit=crop') center/bottom no-repeat;
+            background-size: cover; z-index: 5;
+        }
+
+        /* 望远镜视觉 */
+        .telescope-lens {
+            position: fixed; width: var(--telescope-size); height: var(--telescope-size);
+            border: 8px solid rgba(255,255,255,0.2); border-radius: 50%;
+            transform: translate(-50%, -50%); left: var(--mx, 50%); top: var(--my, 50%);
+            pointer-events: none; z-index: 21;
+            box-shadow: 0 0 0 5000px rgba(0,0,0,0.85);
+        }
+
+        .star-dot {
+            position: absolute; width: 30px; height: 30px; background: white;
+            /* position: absolute; width: 16px; height: 16px; background: white; */
+            border-radius: 50%; box-shadow: 0 0 10px #fff; cursor: pointer;
+            z-index: 10; transform: translate(-50%, -50%); transition: transform 0.2s;
+        }
+        .star-dot.active { background: var(--accent); box-shadow: 0 0 20px var(--accent); }
+
+        .move-hints {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 40px; z-index: 30;
+        }
+        .key-hint { background: rgba(255,255,255,0.1); padding: 8px 15px; border-radius: 10px; border: 1px solid white; font-size: 0.8rem; cursor: pointer; }
+
+        .const-reference {
+            position: fixed; bottom: 30px; right: 30px; width: 200px; height: 200px;
+            background: rgba(10, 20, 40, 0.9); border: 2px solid var(--accent); border-radius: 12px;
+            display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 40;
+        }
+        .const-reference svg { width: 140px; height: 140px; }
+
+        .part-drop {
+            position: fixed; top: -50px; font-size: 3rem; z-index: 100;
+            animation: dropAnim 1.2s forwards cubic-bezier(0.5, 0, 0.7, 0.5);
+        }
+        @keyframes dropAnim { to { transform: translateY(110vh) rotate(720deg); } }
+
+        /* --- 画面四：标本墙 --- */
+        #page-wall { background: radial-gradient(circle, #1a2a3a, #05070a); overflow-y: auto; text-align: center; }
+        .wall-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; width: 80%; max-width: 900px; margin: 40px auto; }
+        .specimen-card {
+            background: rgba(255,255,255,0.05); border: 2px solid rgba(255,204,0,0.2); border-radius: 20px;
+            padding: 20px; cursor: pointer; transition: 0.3s;
+        }
+        .specimen-card:hover { transform: scale(1.05); border-color: var(--accent); }
+        .const-model { font-size: 4rem; margin-bottom: 10px; }
+
+        /* --- 画面五：导师寄语 --- */
+        .mentor-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 4000;
+        }
+        .mentor-img { width: 180px; height: 180px; border-radius: 50%; border: 4px solid var(--accent); margin-bottom: 30px; }
+
+        .btn { padding: 12px 35px; background: var(--primary); border: none; color: white; border-radius: 30px; cursor: pointer; font-weight: bold; font-size: 1.1rem; }
+        
+        /* 导航提示箭头 */
+        #nav-arrow {
+            position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+            color: var(--accent); font-weight: bold; display: none; z-index: 30;
+            text-shadow: 0 0 10px black;
+        }
+    </style>
+</head>
+<body>
+
+    <section id="page-intro" class="page active">
+        <div class="intro-card">
+            <h1 style="color: var(--accent); margin-bottom: 10px;">星星的邀约</h1>
+            <p style="margin-bottom: 30px; opacity: 0.8;">使用望远镜寻找并点亮星空中的秘密</p>
+            <button class="btn" onclick="startSequence()">开始探索</button>
+        </div>
+    </section>
+
+    <section id="page-explore" class="page">
+        <div class="sky-world" id="sky-world">
+            <div class="ground-overlay" id="ground"></div>
+            <canvas id="line-canvas" style="position:absolute; top:0; left:0; pointer-events:none; z-index:15;"></canvas>
+            <div id="stars-container"></div>
+        </div>
+
+        <div class="telescope-lens"></div>
+        
+        <div id="nav-arrow">← 移动视野寻找更多星座 →</div>
+
+        <div class="move-hints">
+            <div class="key-hint" onclick="viewX += 400; updateSkyPosition()">◀ 向左平移</div>
+            <div class="key-hint" onclick="viewX -= 400; updateSkyPosition()">向右平移 ▶</div>
+        </div>
+
+        <div class="const-reference" id="const-ref">
+            <p style="font-size: 0.75rem; color: var(--accent); font-weight: bold; margin-bottom: 5px;" id="ref-title">参考图</p>
+            <svg id="ref-svg" viewBox="0 0 100 100"></svg>
+        </div>
+    </section>
+
+    <section id="page-wall" class="page">
+        <h2 style="color: var(--accent); margin-top: 50px;">⭐ 我的星座标本墙 ⭐</h2>
+        <div class="wall-grid" id="wall-grid"></div>
+        <button class="btn" onclick="showFinalMentor()">面见导师</button>
+    </section>
+
+    <div class="mentor-overlay" id="mentor-overlay">
+        <div style="text-align: center; max-width: 700px; padding: 20px;">
+            <img src="https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&q=80&w=200" class="mentor-img">
+            <h3 style="color: var(--accent); margin-bottom: 20px;">王亚平导师的寄语</h3>
+            <p id="speech-text" style="line-height: 1.8; font-size: 1.15rem; color: #eee;"></p>
+            <button class="btn" style="margin-top: 20px;" onclick="goToLevel2()">继续探索-启航研究</button>
+            <button class="btn" style="margin-top: 10px; background: #666;" onclick="location.reload()">重新探索</button>
+        </div>
+    </div>
+
+    <script>
+        const apiKey = ""; 
+        let viewX = -800, viewY = -400;
+        let activeIdx = -1;
+        let currentPath = [];
+        let completedConsts = [];
+
+        // 重新调整了坐标，确保三个星座分布在左右不同的区域
+        const CONSTELLATIONS = [
+            { 
+                name: "大熊座", 
+                stars: [{x: 1000, y: 1200}, {x: 1100, y: 1250}, {x: 1200, y: 1220}, {x: 1250, y: 1300}, {x: 1150, y: 1380}],
+                icon: "🐻", part: "🚀",
+                connections: [[0,1], [1,2], [2,3], [3,4]] // 正确的连线顺序
+            },
+            { 
+                name: "天鹅座", 
+                stars: [{x: 2000, y: 1100}, {x: 2050, y: 1200}, {x: 2100, y: 1300}, {x: 1950, y: 1230}, {x: 2150, y: 1180}],
+                icon: "🦢", part: "⚙️",
+                connections: [[0,1], [1,2], [0,3], [0,4]] // 正确的连线顺序
+            },
+            { 
+                name: "仙鹤座", 
+                stars: [{x: 3000, y: 1300}, {x: 3100, y: 1350}, {x: 3200, y: 1320}, {x: 3150, y: 1400}],
+                icon: "🦩", part: "🔋",
+                connections: [[0,1], [1,2], [2,3]] // 正确的连线顺序
+            }
+        ];
+
+        function startSequence() {
+            document.getElementById('page-intro').classList.remove('active');
+            document.getElementById('page-explore').classList.add('active');
+            
+            const ground = document.getElementById('ground');
+            setTimeout(() => {
+                ground.style.transition = "transform 3s, opacity 2s";
+                ground.style.transform = "translateY(100vh)";
+                ground.style.opacity = "0";
+                
+                viewY = -1000; // 向上运镜到星空高度
+                updateSkyPosition();
+                
+                setTimeout(() => {
+                    ground.style.display = 'none';
+                    initGameSpace();
+                }, 3000);
+            }, 500);
+        }
+
+        function initGameSpace() {
+            const container = document.getElementById('stars-container');
+            CONSTELLATIONS.forEach((c, cIdx) => {
+                c.stars.forEach((s, sIdx) => {
+                    const dot = document.createElement('div');
+                    dot.className = 'star-dot';
+                    dot.style.left = s.x + 'px';
+                    dot.style.top = s.y + 'px';
+                    dot.onclick = () => handleStarClick(cIdx, sIdx, dot);
+                    container.appendChild(dot);
+                });
+            });
+            // 初始化画布
+            drawAllLines();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function handleStarClick(cIdx, sIdx, el) {
+            // 只有当望远镜对准当前星座，且星座未完成时，才允许点击
+            if (completedConsts.includes(cIdx)) return;
+            if (activeIdx === -1) return; // 还没有对准任何星座
+            if (activeIdx !== cIdx) return; // 对准的不是这个星座
+
+            currentPath.push(sIdx);
+            el.classList.add('active');
+            
+            // 重新绘制所有连线
+            drawAllLines();
+
+            // 检查是否完成所有星星
+            if (currentPath.length === CONSTELLATIONS[cIdx].stars.length) {
+                // 验证连线是否正确
+                if (validateConstellationConnection(cIdx)) {
+                    completedConsts.push(cIdx);
+                    spawnPart(CONSTELLATIONS[cIdx].part);
+                    currentPath = [];
+                    drawAllLines(); // 重绘所有连线（包括完成的）
+                    if (completedConsts.length === 3) handleWin();
+                } else {
+                    // 连线错误，重置当前星座
+                    currentPath = [];
+                    document.querySelectorAll('.star-dot.active').forEach(dot => {
+                        dot.classList.remove('active');
+                    });
+                    drawAllLines(); // 重绘完成的星座连线
+                }
+            }
+        }
+
+        function validateConstellationConnection(cIdx) {
+            // 简化验证：只要点亮了所有星星就算完成
+            return currentPath.length === CONSTELLATIONS[cIdx].stars.length;
+        }
+
+        // 绘制所有连线（包括已完成和当前）
+        function drawAllLines() {
+            const canvas = document.getElementById('line-canvas');
+            canvas.width = 5000; canvas.height = 3000;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0,0,5000,3000);
+            
+            // 绘制已完成星座的线（实线）
+            ctx.strokeStyle = "rgba(255, 204, 0, 0.7)";
+            ctx.lineWidth = 4;
+            ctx.setLineDash([]);
+
+            completedConsts.forEach(idx => {
+                const c = CONSTELLATIONS[idx];
+                // 按照预设的正确路径绘制
+                c.connections.forEach(conn => {
+                    ctx.beginPath();
+                    ctx.moveTo(c.stars[conn[0]].x, c.stars[conn[0]].y);
+                    ctx.lineTo(c.stars[conn[1]].x, c.stars[conn[1]].y);
+                    ctx.stroke();
+                });
+            });
+
+            // 绘制当前正在连接的线（虚线）
+            if (activeIdx !== -1 && currentPath.length > 1) {
+                ctx.strokeStyle = "rgba(255, 204, 0, 0.7)";
+                ctx.lineWidth = 4;
+                ctx.setLineDash([10, 5]);
+                
+                // 绘制当前路径的所有连线
+                for (let i = 1; i < currentPath.length; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(CONSTELLATIONS[activeIdx].stars[currentPath[i-1]].x, CONSTELLATIONS[activeIdx].stars[currentPath[i-1]].y);
+                    ctx.lineTo(CONSTELLATIONS[activeIdx].stars[currentPath[i]].x, CONSTELLATIONS[activeIdx].stars[currentPath[i]].y);
+                    ctx.stroke();
+                }
+            }
+        }
+
+        function gameLoop() {
+            if (!document.getElementById('page-explore').classList.contains('active')) return;
+
+            // 获取望远镜中心坐标
+            const worldX = (window.innerWidth / 2) - viewX;
+            const worldY = (window.innerHeight / 2) - viewY;
+
+            let foundIdx = -1;
+            CONSTELLATIONS.forEach((c, idx) => {
+                if (completedConsts.includes(idx)) return;
+                // 检测范围内是否有星座的任意一颗星
+                let inRange = false;
+                c.stars.forEach(star => {
+                    const dx = worldX - star.x;
+                    const dy = worldY - star.y;
+                    if (Math.sqrt(dx*dx + dy*dy) < 400) inRange = true;
+                });
+                if (inRange) foundIdx = idx;
+            });
+
+            activeIdx = foundIdx;
+            const ref = document.getElementById('const-ref');
+            const nav = document.getElementById('nav-arrow');
+
+            if (activeIdx !== -1) {
+                ref.style.display = 'flex';
+                nav.style.display = 'none';
+                document.getElementById('ref-title').innerText = CONSTELLATIONS[activeIdx].name;
+                renderRefSvg(CONSTELLATIONS[activeIdx]);
+            } else {
+                ref.style.display = 'none';
+                nav.style.display = 'block';
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function renderRefSvg(data) {
+            const svg = document.getElementById('ref-svg');
+            const first = data.stars[0];
+            const scale = 0.06; // 放大缩放比例
+            svg.innerHTML = '';
+            
+            // 绘制星点
+            data.stars.forEach(s => {
+                const x = (s.x - first.x) * scale + 70;
+                const y = (s.y - first.y) * scale + 70;
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', x);
+                circle.setAttribute('cy', y);
+                circle.setAttribute('r', '4');
+                circle.setAttribute('fill', 'white');
+                svg.appendChild(circle);
+            });
+            
+            // 按照正确的连接顺序绘制连线
+            data.connections.forEach(conn => {
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', (data.stars[conn[0]].x - first.x) * scale + 70);
+                line.setAttribute('y1', (data.stars[conn[0]].y - first.y) * scale + 70);
+                line.setAttribute('x2', (data.stars[conn[1]].x - first.x) * scale + 70);
+                line.setAttribute('y2', (data.stars[conn[1]].y - first.y) * scale + 70);
+                line.setAttribute('stroke', 'var(--accent)');
+                line.setAttribute('stroke-width', '3');
+                svg.appendChild(line);
+            });
+        }
+
+        function spawnPart(emoji) {
+            const part = document.createElement('div');
+            part.className = 'part-drop';
+            part.innerText = emoji;
+            part.style.left = '50%';
+            document.body.appendChild(part);
+            setTimeout(() => part.remove(), 1300);
+        }
+
+        function updateSkyPosition() {
+            // 限制视野边界
+            if (viewX > 0) viewX = 0;
+            if (viewX < -3500) viewX = -3500;
+            document.getElementById('sky-world').style.transform = `translate(${viewX}px, ${viewY}px)`;
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a') viewX += 100;
+            if (e.key === 'ArrowRight' || e.key === 'd') viewX -= 100;
+            updateSkyPosition();
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            document.documentElement.style.setProperty('--mx', e.clientX + 'px');
+            document.documentElement.style.setProperty('--my', e.clientY + 'px');
+        });
+
+        function handleWin() {
+            setTimeout(() => {
+                document.getElementById('page-explore').classList.remove('active');
+                document.getElementById('page-wall').classList.add('active');
+                const grid = document.getElementById('wall-grid');
+                grid.innerHTML = CONSTELLATIONS.map(c => `
+                    <div class="specimen-card">
+                        <div class="const-model">${c.icon}</div>
+                        <h3 style="color:var(--accent)">${c.name}</h3>
+                    </div>
+                `).join('');
+            }, 1500);
+        }
+
+        function showFinalMentor() {
+            document.getElementById('mentor-overlay').style.display = 'flex';
+            document.getElementById('speech-text').innerText = "\"你看，当所有的星点连成一线，寂静的星空就有了名字。你刚刚亲手点亮的不仅是星座，更是通往科学殿堂的阶梯。每一个女孩都是一颗独特的星，当你敢于在黑暗中发光，整个宇宙都会为你闪烁。保持这份探索的渴望，去书写属于你的星际航行志吧！\"";
+        }
+
+        function goToLevel2() {
+            // 发送消息给父窗口，通知第一关完成
+            if (window.parent !== window) {
+                window.parent.postMessage('level1Complete', '*');
+            } else {
+                // 如果不是在iframe中，直接跳转到第二关
+                window.location.href = '../rocket/rocket-game/rocket-single.html';
+            }
+        }
+    </script>
+</body>
+</html>
