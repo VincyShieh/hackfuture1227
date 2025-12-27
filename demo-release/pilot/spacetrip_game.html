@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>宇宙漫游 - 星际发现之旅</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 星空背景 */
+        .stars-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        /* 游戏容器 */
+        .game-container {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 场景容器 */
+        .scene {
+            display: none;
+            position: relative;
+            width: 100%;
+            height: 100%;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        .scene.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 标题样式 */
+        .title {
+            font-size: 3em;
+            color: #fff;
+            margin-bottom: 30px;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { text-shadow: 0 0 20px rgba(255, 255, 255, 0.5); }
+            to { text-shadow: 0 0 30px rgba(255, 255, 255, 0.8), 0 0 40px rgba(100, 200, 255, 0.6); }
+        }
+
+        /* 控制台 */
+        .console {
+            background: linear-gradient(145deg, rgba(30, 30, 60, 0.9), rgba(20, 20, 40, 0.9));
+            border: 2px solid #4a9eff;
+            border-radius: 20px;
+            padding: 30px;
+            margin: 20px auto;
+            max-width: 600px;
+            box-shadow: 0 0 30px rgba(74, 158, 255, 0.3);
+        }
+
+        /* 航天员向导 */
+        .astronaut-guide {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 60px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* 消息文本 */
+        .message {
+            color: #fff;
+            font-size: 1.2em;
+            line-height: 1.6;
+            margin: 20px 0;
+            max-width: 500px;
+        }
+
+        /* 按钮样式 */
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1em;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            margin: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(102, 126, 234, 0.6);
+        }
+
+        /* 星图 */
+        .star-map {
+            background: rgba(0, 0, 20, 0.8);
+            border: 3px solid #4a9eff;
+            border-radius: 20px;
+            padding: 20px;
+            margin: 20px auto;
+            max-width: 800px;
+            position: relative;
+            height: 400px;
+        }
+
+        /* 星球 */
+        .planet {
+            position: absolute;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.9em;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .planet:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 30px currentColor;
+        }
+
+        .planet.mars {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #ff6b35, #c44569);
+            top: 50px;
+            left: 100px;
+        }
+
+        .planet.jupiter {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #ffa500, #ff6347);
+            top: 150px;
+            right: 150px;
+        }
+
+        .planet.saturn {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #f4e5c2, #d4a574);
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            position: relative;
+        }
+
+        .planet.saturn::after {
+            content: '';
+            position: absolute;
+            width: 140px;
+            height: 140px;
+            border: 8px solid rgba(212, 165, 116, 0.6);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotateX(60deg);
+        }
+
+        /* 星球视图 */
+        .planet-view {
+            width: 300px;
+            height: 300px;
+            margin: 20px auto;
+            border-radius: 50%;
+            position: relative;
+            cursor: pointer;
+            animation: rotate 20s linear infinite;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* 兴趣点 */
+        .interest-point {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.3));
+            border-radius: 50%;
+            cursor: pointer;
+            animation: pulse 2s infinite;
+            pointer-events: auto;
+        }
+
+        .interest-point.explored {
+            background: radial-gradient(circle, rgba(76, 175, 80, 0.9), rgba(76, 175, 80, 0.3));
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.3); opacity: 1; }
+        }
+
+        /* 信息卡片 */
+        .info-card {
+            background: linear-gradient(145deg, rgba(30, 30, 60, 0.95), rgba(20, 20, 40, 0.95));
+            border: 2px solid #4a9eff;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px auto;
+            max-width: 400px;
+            color: white;
+            display: none;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .info-card.show {
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 标本墙 */
+        .specimen-wall {
+            background: linear-gradient(145deg, rgba(20, 20, 40, 0.9), rgba(10, 10, 30, 0.9));
+            border: 3px solid #4a9eff;
+            border-radius: 20px;
+            padding: 30px;
+            margin: 20px auto;
+            max-width: 900px;
+            min-height: 400px;
+        }
+
+        .specimen-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .specimen-item {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin: 10px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .specimen-item:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 25px rgba(74, 158, 255, 0.5);
+        }
+
+        /* 反思问题 */
+        .reflection-question {
+            color: white;
+            font-size: 1.3em;
+            margin: 30px 0;
+            max-width: 600px;
+            line-height: 1.6;
+            text-align: center;
+        }
+
+        .choice-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin: 30px 0;
+        }
+
+        .choice-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 1em;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .choice-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        /* 探索标记 */
+        .explored-mark {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #4CAF50;
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        /* 成功消息 */
+        .success-message {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 15px auto;
+            max-width: 450px;
+            text-align: center;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        /* 警告消息 */
+        .warning-message {
+            background: rgba(255, 107, 107, 0.9);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px auto;
+            max-width: 400px;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .title {
+                font-size: 2em;
+            }
+
+            .console, .star-map, .specimen-wall {
+                max-width: 95%;
+                padding: 15px;
+            }
+
+            .planet {
+                width: 60px;
+                height: 60px;
+                font-size: 0.8em;
+            }
+
+            .planet.jupiter {
+                width: 80px;
+                height: 80px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 星空背景 -->
+    <div class="stars-container" id="starsContainer"></div>
+
+    <!-- 游戏容器 -->
+    <div class="game-container">
+        <!-- 场景一：关卡开启 -->
+        <div class="scene active" id="scene1">
+            <h1 class="title">✨ 星空邀请</h1>
+            <div class="console">
+                <div class="astronaut-guide">👩‍🚀</div>
+                <div class="message">
+                    呼叫地球小探险家！我是你的太空向导王亚平。<br><br>
+                    我们的宇宙飞船已经充能完毕，准备前往太阳系的几个神秘星球进行科学考察。<br><br>
+                    这次的任务不是竞赛，而是仔细地观察和记录。<br>
+                    每颗星球都是宇宙中独一无二的宝石，等你来发现它们的秘密。<br><br>
+                    准备好开始你的星际发现之旅了吗？
+                </div>
+                <button class="btn" onclick="startNavigation()">🚀 启动星际导航！</button>
+            </div>
+        </div>
+
+        <!-- 场景二：准备室 -->
+        <div class="scene" id="scene2">
+            <h1 class="title">🗺️ 科考任务简报</h1>
+            <div class="star-map">
+                <h3 style="color: white; margin-bottom: 20px; text-align: center;">科考任务：探索 3 颗星球，完成你的宇宙标本收集</h3>
+                <div style="color: #ccc; margin: 15px 0; text-align: center;">点击星图上的星球，即可自动驾驶前往。在星球上，请仔细点击你感兴趣的地方进行调查！</div>
+
+                <div class="planet mars" onclick="selectPlanet('mars')">火星</div>
+                <div class="planet jupiter" onclick="selectPlanet('jupiter')">木星</div>
+                <div class="planet saturn" onclick="selectPlanet('saturn')">土星</div>
+            </div>
+
+            <div style="margin: 20px 0;">
+                <button id="spacesuitBtn" class="btn" onclick="wearSpacesuit()" style="font-size: 1.2em; padding: 18px 45px; background: linear-gradient(135deg, #ff6b6b, #ff8e8e);">
+                    👩‍🚀 穿上宇航服
+                </button>
+            </div>
+
+            <div style="margin-top: 30px; color: #aaa; text-align: center;">
+                <p>📝 探索提示：</p>
+                <p>1️⃣ 先穿戴宇航服确保安全</p>
+                <p>2️⃣ 点击星图上的星球选择目标</p>
+                <p>3️⃣ 在星球上点击发光点探索知识</p>
+            </div>
+
+            <button class="btn" onclick="backToMenu()" style="margin-top: 20px; background: linear-gradient(135deg, #666, #444);">返回</button>
+        </div>
+
+        <!-- 场景三：星球探索 -->
+        <div class="scene" id="scene3">
+            <h1 class="title" id="planetName">星球探索</h1>
+            <div class="planet-view" id="planetView">
+                <!-- 兴趣点将通过JS动态添加 -->
+            </div>
+
+            <div class="info-card" id="infoCard">
+                <h3 id="infoTitle"></h3>
+                <p id="infoContent"></p>
+                <button class="btn" onclick="closeInfo()">继续探索</button>
+            </div>
+
+            <div class="info-card" id="completeCard" style="display: none;">
+                <h3>🎉 星球数据采集完毕！</h3>
+                <p>你已经成功探索了这颗星球的所有主要兴趣点！</p>
+                <button class="btn" onclick="selectNextPlanet()">选择下一颗星球</button>
+            </div>
+
+            <button class="btn" onclick="backToStarMap()">返回星图</button>
+        </div>
+
+        <!-- 场景四：标本墙 -->
+        <div class="scene" id="scene4">
+            <h1 class="title">🏆 星球标本墙</h1>
+            <div class="specimen-wall">
+                <h3 style="color: white; margin-bottom: 20px; text-align: center;">恭喜你成为了一名小小的行星科学家！</h3>
+                <p style="color: #ccc; margin: 15px 0; text-align: center;">你收集的宇宙知识，是你最宝贵的财富</p>
+
+                <div class="specimen-grid" id="specimenGrid">
+                    <!-- 动态生成标本 -->
+                </div>
+            </div>
+            <button class="btn" onclick="finalReflection()">继续你的探索之旅</button>
+        </div>
+
+        <!-- 场景五：情感升华 -->
+        <div class="scene" id="scene5">
+            <h1 class="title">✨ 宇宙与自我</h1>
+            <div class="astronaut-guide">👩‍🚀</div>
+
+            <div class="reflection-question">
+                在我们广阔的宇宙中，每一颗星球都如此不同，有着自己独特的故事。<br>
+                就像我们每个女孩一样，都是独一无二的。<br>
+                你的独特之处是什么呢？
+            </div>
+
+            <div class="choice-buttons">
+                <button class="choice-btn" onclick="makeChoice('curiosity')">我的好奇心像宇宙一样大！</button>
+                <button class="choice-btn" onclick="makeChoice('caring')">我像地球一样，关爱身边的每一个朋友。</button>
+                <button class="choice-btn" onclick="makeChoice('shining')">我正在努力，想成为一颗发光的星星！</button>
+            </div>
+
+            <div class="info-card" id="finalMessage" style="display: none;">
+                <p id="finalText"></p>
+                <button class="btn" onclick="restartGame()">重新开始探索</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 游戏状态管理
+        const gameState = {
+            currentScene: 1,
+            exploredPlanets: [],
+            currentPlanet: null,
+            discoveredPoints: {
+                mars: [],
+                jupiter: [],
+                saturn: []
+            },
+            wearingSpacesuit: false
+        };
+
+        // 状态持久化函数
+        function saveGameState() {
+            localStorage.setItem('spacetrip_gameState', JSON.stringify(gameState));
+        }
+
+        function loadGameState() {
+            const saved = localStorage.getItem('spacetrip_gameState');
+            if (saved) {
+                const savedState = JSON.parse(saved);
+                gameState.exploredPlanets = savedState.exploredPlanets || [];
+                gameState.discoveredPoints = savedState.discoveredPoints || {
+                    mars: [],
+                    jupiter: [],
+                    saturn: []
+                };
+                gameState.wearingSpacesuit = savedState.wearingSpacesuit || false;
+            }
+        }
+
+        function resetGameState() {
+            gameState.exploredPlanets = [];
+            gameState.currentPlanet = null;
+            gameState.discoveredPoints = {
+                mars: [],
+                jupiter: [],
+                saturn: []
+            };
+            gameState.wearingSpacesuit = false;
+            gameState.currentScene = 1;
+            localStorage.removeItem('spacetrip_gameState');
+        }
+
+        // 星球数据
+        const planetsData = {
+            mars: {
+                name: '火星',
+                gradient: 'linear-gradient(135deg, #ff6b35, #c44569)',
+                points: [
+                    { id: 'olympus', title: '奥林匹斯山', content: '太阳系最高山峰！高度是珠穆朗玛峰的3倍哦！这里几乎没有空气，非常寒冷。', top: '20%', left: '30%' },
+                    { id: 'valley', title: '水手峡谷', content: '火星上巨大的峡谷系统，长度相当于美国纽约到洛杉矶的距离！', top: '50%', left: '70%' },
+                    { id: 'polar', title: '极地冰盖', content: '火星的北极和南极覆盖着干冰和水冰，随着季节变化而消长。', top: '70%', left: '20%' }
+                ]
+            },
+            jupiter: {
+                name: '木星',
+                gradient: 'linear-gradient(135deg, #ffa500, #ff6347)',
+                points: [
+                    { id: 'greatred', title: '大红斑', content: '一个超级大风暴！已经刮了至少350年，大到可以装下整个地球。', top: '20%', left: '30%' },
+                    { id: 'io', title: '木卫一', content: '木星的卫星之一，是太阳系中火山活动最活跃的天体！', top: '50%', left: '70%' },
+                    { id: 'magnetic', title: '磁场', content: '木星拥有太阳系中最强的磁场，比地球磁场强20,000倍！', top: '70%', left: '20%' }
+                ]
+            },
+            saturn: {
+                name: '土星',
+                gradient: 'linear-gradient(135deg, #f4e5c2, #d4a574)',
+                points: [
+                    { id: 'rings', title: '行星环', content: '这些光环主要是由冰块和岩石组成的，像给土星穿上了一条闪闪发光的裤子。', top: '20%', left: '30%' },
+                    { id: 'titan', title: '土卫六', content: '土星最大的卫星，拥有浓厚的大气层和液态甲烷湖泊！', top: '50%', left: '70%' },
+                    { id: 'hexagon', title: '六边形风暴', content: '土星北极有一个巨大的六边形风暴，每10.5小时旋转一圈！', top: '70%', left: '20%' }
+                ]
+            }
+        };
+
+        // 初始化星空背景
+        function initStars() {
+            const container = document.getElementById('starsContainer');
+            const starCount = 200;
+
+            for (let i = 0; i < starCount; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                const size = Math.random() * 3 + 1;
+                star.style.width = size + 'px';
+                star.style.height = size + 'px';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                container.appendChild(star);
+            }
+        }
+
+        // 场景切换
+        function switchScene(sceneNumber) {
+            document.querySelectorAll('.scene').forEach(scene => {
+                scene.classList.remove('active');
+            });
+            document.getElementById('scene' + sceneNumber).classList.add('active');
+            gameState.currentScene = sceneNumber;
+
+            if (sceneNumber === 2) {
+                updatePlanetsStatus();
+            }
+        }
+
+        // 更新星图上的星球状态
+        function updatePlanetsStatus() {
+            const starMap = document.querySelector('.star-map');
+            gameState.exploredPlanets.forEach(planetName => {
+                const planetElement = document.querySelector(`.planet.${planetName}`);
+                if (planetElement) {
+                    if (!planetElement.querySelector('.explored-mark')) {
+                        const mark = document.createElement('div');
+                        mark.innerHTML = '✓';
+                        mark.className = 'explored-mark';
+                        planetElement.style.position = 'relative';
+                        planetElement.appendChild(mark);
+                    }
+                }
+            });
+        }
+
+        // 场景一：启动导航
+        function startNavigation() {
+            switchScene(2);
+        }
+
+        // 穿上宇航服
+        function wearSpacesuit() {
+            gameState.wearingSpacesuit = true;
+
+            const starMap = document.querySelector('.star-map');
+            const successMsg = document.createElement('div');
+            successMsg.className = 'success-message';
+            successMsg.innerHTML = '✅ 宇航服穿戴完成！<br>你现在可以安全地进行太空探索了！<br>🚀 点击任意星球开始探索！';
+            starMap.appendChild(successMsg);
+
+            const button = document.getElementById('spacesuitBtn');
+            button.textContent = '✅ 宇航服已穿戴';
+            button.style.background = 'linear-gradient(135deg, #4CAF50, #45a049)';
+            button.style.opacity = '0.8';
+            button.style.cursor = 'not-allowed';
+            button.onclick = null;
+
+            document.querySelectorAll('.planet').forEach(planet => {
+                planet.style.animation = 'pulse 1.5s infinite';
+            });
+
+            setTimeout(() => {
+                successMsg.remove();
+            }, 4000);
+
+            saveGameState();
+        }
+
+        // 场景二：选择星球
+        function selectPlanet(planetName) {
+            if (!gameState.wearingSpacesuit) {
+                const starMap = document.querySelector('.star-map');
+                const prompt = document.createElement('div');
+                prompt.className = 'warning-message';
+                prompt.innerHTML = '👩‍🚀 请先点击"穿上宇航服"按钮，确保安全后再进行探索！';
+                starMap.appendChild(prompt);
+
+                setTimeout(() => {
+                    prompt.remove();
+                }, 3000);
+                return;
+            }
+
+            gameState.currentPlanet = planetName;
+            const planetData = planetsData[planetName];
+
+            document.getElementById('planetName').textContent = planetData.name + ' 探索';
+            const planetView = document.getElementById('planetView');
+            planetView.style.background = planetData.gradient;
+
+            // 清空旧的兴趣点
+            planetView.innerHTML = '';
+
+            // 添加新的兴趣点
+            planetData.points.forEach(point => {
+                const interestPoint = document.createElement('div');
+                interestPoint.className = 'interest-point';
+                interestPoint.style.top = point.top;
+                interestPoint.style.left = point.left;
+                interestPoint.dataset.id = point.id;
+
+                // 检查是否已探索
+                if (gameState.discoveredPoints[planetName].includes(point.id)) {
+                    interestPoint.classList.add('explored');
+                }
+
+                interestPoint.onclick = () => showInfo(point.id);
+                planetView.appendChild(interestPoint);
+            });
+
+            switchScene(3);
+        }
+
+        function backToStarMap() {
+            switchScene(2);
+        }
+
+        function backToMenu() {
+            switchScene(1);
+        }
+
+        // 场景三：星球探索
+        function showInfo(pointId) {
+            if (!gameState.currentPlanet) return;
+
+            const planetData = planetsData[gameState.currentPlanet];
+            const pointData = planetData.points.find(p => p.id === pointId);
+
+            if (gameState.discoveredPoints[gameState.currentPlanet].includes(pointId)) {
+                document.getElementById('infoTitle').textContent = '已探索';
+                document.getElementById('infoContent').textContent = '你已经探索过这个地点了！可以点击其他未探索的兴趣点继续发现。';
+                document.getElementById('infoCard').classList.add('show');
+                return;
+            }
+
+            gameState.discoveredPoints[gameState.currentPlanet].push(pointId);
+            saveGameState();
+
+            markInterestPointExplored(pointId);
+
+            document.getElementById('infoTitle').textContent = pointData.title;
+            document.getElementById('infoContent').textContent = pointData.content;
+            document.getElementById('infoCard').classList.add('show');
+
+            const totalPoints = planetData.points.length;
+            if (gameState.discoveredPoints[gameState.currentPlanet].length === totalPoints) {
+                setTimeout(() => {
+                    completePlanetExploration();
+                }, 3000);
+            }
+        }
+
+        function markInterestPointExplored(pointId) {
+            const points = document.querySelectorAll('.interest-point');
+            points.forEach(point => {
+                if (point.dataset.id === pointId) {
+                    point.classList.add('explored');
+                    point.onclick = () => {
+                        document.getElementById('infoTitle').textContent = '已探索';
+                        document.getElementById('infoContent').textContent = '你已经探索过这个地点了！';
+                        document.getElementById('infoCard').classList.add('show');
+                    };
+                }
+            });
+        }
+
+        function closeInfo() {
+            document.getElementById('infoCard').classList.remove('show');
+        }
+
+        function completePlanetExploration() {
+            document.getElementById('completeCard').style.display = 'block';
+            document.getElementById('infoCard').classList.remove('show');
+
+            if (!gameState.exploredPlanets.includes(gameState.currentPlanet)) {
+                gameState.exploredPlanets.push(gameState.currentPlanet);
+            }
+            saveGameState();
+        }
+
+        function selectNextPlanet() {
+            document.getElementById('completeCard').style.display = 'none';
+            switchScene(2);
+
+            if (gameState.exploredPlanets.length === 3) {
+                setTimeout(() => {
+                    showSpecimenWall();
+                }, 1000);
+            }
+        }
+
+        // 场景四：标本墙
+        function showSpecimenWall() {
+            switchScene(4);
+            generateSpecimens();
+        }
+
+        function generateSpecimens() {
+            const grid = document.getElementById('specimenGrid');
+            grid.innerHTML = '';
+
+            gameState.exploredPlanets.forEach(planetName => {
+                const planetData = planetsData[planetName];
+                const specimen = document.createElement('div');
+                specimen.className = 'specimen-item';
+                specimen.style.background = planetData.gradient;
+                specimen.textContent = planetData.name;
+                specimen.onclick = () => reviewPlanet(planetName);
+                grid.appendChild(specimen);
+            });
+        }
+
+        function reviewPlanet(planetName) {
+            const planetData = planetsData[planetName];
+            const info = planetData.points.map(p => `• ${p.title}: ${p.content}`).join('\n\n');
+            document.getElementById('infoTitle').textContent = planetData.name + ' 知识回顾';
+            document.getElementById('infoContent').innerText = info;
+            document.getElementById('infoCard').classList.add('show');
+        }
+
+        function finalReflection() {
+            switchScene(5);
+        }
+
+        // 场景五：情感升华
+        function makeChoice(choice) {
+            const responses = {
+                curiosity: '记住，好奇心是探索宇宙的第一步！保持这份求知欲，你会发现生活中有无数值得探索的秘密。继续前进吧，充满好奇心的小探险家！',
+                caring: '像地球一样关爱他人，这是宇宙中最珍贵的品质之一。你的温暖和善良会让这个世界变得更加美好。继续发光发热吧，温柔的小恒星！',
+                shining: '每颗星星都有自己的光芒，你正在努力成为的那道光，已经照亮了身边的一切。相信自己，你就是那颗独一无二的星星！'
+            };
+
+            document.getElementById('finalText').textContent = responses[choice];
+            document.getElementById('finalMessage').style.display = 'block';
+        }
+
+        function restartGame() {
+            resetGameState();
+            document.getElementById('completeCard').style.display = 'none';
+            document.getElementById('finalMessage').style.display = 'none';
+            document.getElementById('infoCard').classList.remove('show');
+
+            // 重置宇航服按钮
+            const button = document.getElementById('spacesuitBtn');
+            button.textContent = '👩‍🚀 穿上宇航服';
+            button.style.background = 'linear-gradient(135deg, #ff6b6b, #ff8e8e)';
+            button.style.opacity = '1';
+            button.style.cursor = 'pointer';
+            button.onclick = wearSpacesuit;
+
+            // 重置星球状态
+            document.querySelectorAll('.planet').forEach(planet => {
+                const mark = planet.querySelector('.explored-mark');
+                if (mark) mark.remove();
+                planet.style.animation = '';
+            });
+
+            // 发送消息给父窗口
+            if (window.parent !== window) {
+                window.parent.postMessage('returnToMenu', '*');
+            } else {
+                window.location.href = '../index.html';
+            }
+
+            switchScene(1);
+        }
+
+        // 初始化游戏
+        window.onload = function() {
+            initStars();
+            loadGameState();
+
+            if (gameState.wearingSpacesuit) {
+                const button = document.getElementById('spacesuitBtn');
+                if (button) {
+                    button.textContent = '✅ 宇航服已穿戴';
+                    button.style.background = 'linear-gradient(135deg, #4CAF50, #45a049)';
+                    button.style.opacity = '0.8';
+                    button.style.cursor = 'not-allowed';
+                    button.onclick = null;
+                }
+
+                setTimeout(() => {
+                    document.querySelectorAll('.planet').forEach(planet => {
+                        planet.style.animation = 'pulse 1.5s infinite';
+                    });
+                }, 100);
+            }
+        };
+    </script>
+</body>
+</html>

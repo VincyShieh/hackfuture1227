@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>她的探险笔记</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            background: radial-gradient(ellipse at center, #1a1a3e 0%, #0a0a1a 50%, #000000 100%);
+        }
+
+        /* 星空背景 */
+        .stars-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite ease-in-out;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        /* 主界面容器 */
+        .main-container {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        /* 标题 */
+        .game-title {
+            position: absolute;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #fff;
+            font-size: 2.5em;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5), 0 0 40px rgba(100, 200, 255, 0.3);
+            animation: glow 3s ease-in-out infinite alternate;
+            z-index: 20;
+        }
+
+        @keyframes glow {
+            from { text-shadow: 0 0 20px rgba(255, 255, 255, 0.5), 0 0 40px rgba(100, 200, 255, 0.3); }
+            to { text-shadow: 0 0 30px rgba(255, 255, 255, 0.8), 0 0 60px rgba(100, 200, 255, 0.5); }
+        }
+
+        /* 女孩形象 */
+        .girl-figure {
+            position: absolute;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 5;
+            width: 120px;
+            height: 200px;
+            background: linear-gradient(180deg, #f5d0c5 0%, #f5d0c5 25%, #ffffff 25%, #ffffff 45%, #4a90d9 45%, #4a90d9 100%);
+            border-radius: 40px 40px 20px 20px;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
+        }
+
+        .girl-figure::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 60px;
+            background: #f5d0c5;
+            border-radius: 50%;
+        }
+
+        /* 门框容器 */
+        .doors-container {
+            position: absolute;
+            bottom: 280px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 80px;
+            z-index: 15;
+        }
+
+        /* 门框 */
+        .door {
+            width: 180px;
+            height: 280px;
+            border-radius: 90px 90px 0 0;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.5s ease;
+            overflow: hidden;
+        }
+
+        .door-inner {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            bottom: 0;
+            border-radius: 80px 80px 0 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* 星空之门 */
+        .door-space {
+            border: 6px solid rgba(100, 149, 237, 0.6);
+            box-shadow: 0 0 20px rgba(100, 149, 237, 0.4), inset 0 0 20px rgba(100, 149, 237, 0.3);
+        }
+
+        .door-space .door-inner {
+            background: linear-gradient(180deg, #0a0a2e 0%, #1a1a4e 50%, #2a2a6e 100%);
+        }
+
+        /* 体育场之门 */
+        .door-stadium {
+            border: 6px solid rgba(255, 165, 0, 0.6);
+            box-shadow: 0 0 20px rgba(255, 165, 0, 0.4), inset 0 0 20px rgba(255, 165, 0, 0.3);
+        }
+
+        .door-stadium .door-inner {
+            background: linear-gradient(180deg, #4a2c2c 0%, #6b3c3c 50%, #8b4c4c 100%);
+        }
+
+        /* 建筑之门 */
+        .door-architecture {
+            border: 6px solid rgba(147, 112, 219, 0.6);
+            box-shadow: 0 0 20px rgba(147, 112, 219, 0.4), inset 0 0 20px rgba(147, 112, 219, 0.3);
+        }
+
+        .door-architecture .door-inner {
+            background: linear-gradient(180deg, #2a2a3e 0%, #4a4a6e 50%, #6a6a9e 100%);
+        }
+
+        /* 门内背景动画 */
+        .door-bg {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0.7;
+        }
+
+        .door-space .door-bg {
+            background: radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+        }
+
+        .door-stadium .door-bg {
+            background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.5) 100%);
+        }
+
+        .door-architecture .door-bg {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+        }
+
+        /* 榜样剪影 */
+        .role-silhouette {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 100px;
+            opacity: 0.3;
+            transition: all 0.5s ease;
+        }
+
+        .role-silhouette::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 30px;
+            background: #000;
+            border-radius: 50%;
+        }
+
+        .role-silhouette::after {
+            content: '';
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 70px;
+            background: #000;
+            border-radius: 20px 20px 0 0;
+        }
+
+        /* 悬停效果 */
+        .door:hover {
+            transform: scale(1.05);
+        }
+
+        .door:hover .door-inner {
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        .door:hover .role-silhouette {
+            opacity: 1;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% {
+                box-shadow: 0 0 30px currentColor;
+            }
+            50% {
+                box-shadow: 0 0 50px currentColor;
+            }
+        }
+
+        /* 点击效果 */
+        .door.clicked {
+            animation: burst 0.5s ease-out forwards;
+        }
+
+        @keyframes burst {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 20px currentColor;
+            }
+            50% {
+                transform: scale(1.1);
+                box-shadow: 0 0 60px currentColor, 0 0 100px currentColor;
+            }
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 20px currentColor;
+            }
+        }
+
+        /* 光粒效果 */
+        .light-particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        /* 门标签 */
+        .door-label {
+            position: absolute;
+            bottom: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 0.9em;
+            opacity: 0.7;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .door:hover .door-label {
+            opacity: 1;
+            font-size: 1em;
+        }
+
+        /* 过渡遮罩 */
+        .transition-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: black;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s ease;
+        }
+
+        .transition-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        /* 过渡动画 */
+        .transition-animation {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .transition-animation.active {
+            display: flex;
+        }
+
+        .transition-stars {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        .transition-star {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: white;
+            border-radius: 50%;
+            animation: shoot 2s linear infinite;
+        }
+
+        @keyframes shoot {
+            0% {
+                transform: translateX(0) translateY(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translateX(-1000px) translateY(-500px);
+                opacity: 0;
+            }
+        }
+
+        .transition-text {
+            position: relative;
+            z-index: 10;
+            color: white;
+            font-size: 2em;
+            animation: fade-in-out 2s ease-in-out infinite;
+        }
+
+        @keyframes fade-in-out {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .game-title {
+                font-size: 1.8em;
+                top: 20px;
+            }
+
+            .doors-container {
+                gap: 40px;
+                bottom: 220px;
+            }
+
+            .door {
+                width: 120px;
+                height: 180px;
+            }
+
+            .girl-figure {
+                width: 80px;
+                height: 140px;
+                bottom: 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 星空背景 -->
+    <div class="stars-bg" id="starsBg"></div>
+
+    <!-- 主界面 -->
+    <div class="main-container">
+        <h1 class="game-title">她的探险笔记</h1>
+
+        <div class="doors-container">
+            <!-- 星空之门 -->
+            <div class="door door-space" data-level="1" onclick="selectLevel(1)">
+                <div class="door-inner">
+                    <div class="door-bg"></div>
+                    <div class="role-silhouette" title="航天员"></div>
+                </div>
+                <div class="door-label">星空之门</div>
+            </div>
+
+            <!-- 体育场之门 -->
+            <div class="door door-stadium" data-level="2" onclick="selectLevel(2)">
+                <div class="door-inner">
+                    <div class="door-bg"></div>
+                    <div class="role-silhouette" title="运动员"></div>
+                </div>
+                <div class="door-label">体育场之门</div>
+            </div>
+
+            <!-- 建筑之门 -->
+            <div class="door door-architecture" data-level="3" onclick="selectLevel(3)">
+                <div class="door-inner">
+                    <div class="door-bg"></div>
+                    <div class="role-silhouette" title="建筑师"></div>
+                </div>
+                <div class="door-label">建筑之门</div>
+            </div>
+        </div>
+
+        <div class="girl-figure"></div>
+    </div>
+
+    <!-- 过渡遮罩 -->
+    <div class="transition-overlay" id="transitionOverlay">
+        <div class="transition-animation" id="transitionAnimation">
+            <div class="transition-stars" id="transitionStars"></div>
+            <div class="transition-text">正在进入...</div>
+        </div>
+    </div>
+
+    <!-- 游戏iframe容器 -->
+    <iframe id="gameFrame" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; border: none; z-index: 100;"></iframe>
+
+    <script>
+        // 初始化星空背景
+        function initStars() {
+            const container = document.getElementById('starsBg');
+            const starCount = 150;
+
+            for (let i = 0; i < starCount; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                const size = Math.random() * 3 + 1;
+                star.style.width = size + 'px';
+                star.style.height = size + 'px';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                container.appendChild(star);
+            }
+        }
+
+        // 选择关卡
+        function selectLevel(level) {
+            const door = document.querySelector(`.door[data-level="${level}"]`);
+            door.classList.add('clicked');
+
+            // 播放过渡动画
+            setTimeout(() => {
+                startTransition(level);
+            }, 500);
+        }
+
+        // 开始过渡
+        function startTransition(level) {
+            const overlay = document.getElementById('transitionOverlay');
+            const animation = document.getElementById('transitionAnimation');
+
+            overlay.classList.add('active');
+            animation.classList.add('active');
+
+            // 创建过渡星星
+            createTransitionStars();
+
+            // 根据关卡选择不同的过渡效果
+            const transitionText = document.querySelector('.transition-text');
+            const levelNames = ['', '星星的邀约', '启航研究室', '宇宙漫游'];
+            transitionText.textContent = '正在前往 ' + levelNames[level] + '...';
+
+            // 1.5秒后跳转到对应关卡
+            setTimeout(() => {
+                goToLevel(level);
+            }, 1500);
+        }
+
+        // 创建过渡星星
+        function createTransitionStars() {
+            const container = document.getElementById('transitionStars');
+            container.innerHTML = '';
+
+            for (let i = 0; i < 30; i++) {
+                const star = document.createElement('div');
+                star.className = 'transition-star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 2 + 's';
+                container.appendChild(star);
+            }
+        }
+
+        // 跳转到关卡
+        function goToLevel(level) {
+            // 第二关：使用本地构建版本
+            if (level === 2) {
+                window.location.href = 'rocket-game/index.html';
+                return;
+            }
+
+            const gameFrame = document.getElementById('gameFrame');
+
+            // 根据关卡设置不同的iframe地址
+            const levelUrls = {
+                1: 'star/star_date.html',
+                3: 'pilot/spacetrip_game.html'
+            };
+
+            gameFrame.src = levelUrls[level];
+            gameFrame.style.display = 'block';
+
+            // 监听iframe加载完成
+            gameFrame.onload = function() {
+                // iframe加载完成，隐藏过渡层
+                const overlay = document.getElementById('transitionOverlay');
+                const animation = document.getElementById('transitionAnimation');
+                if (overlay) overlay.classList.remove('active');
+                if (animation) animation.classList.remove('active');
+
+                // 淡入游戏iframe
+                gameFrame.style.opacity = '0';
+                setTimeout(() => {
+                    gameFrame.style.transition = 'opacity 0.5s ease';
+                    gameFrame.style.opacity = '1';
+                }, 100);
+
+                console.log(`关卡 ${level} 加载完成`);
+            };
+
+            // 监听来自子窗口的消息
+            window.removeEventListener('message', handleLevelComplete);
+            window.addEventListener('message', handleLevelComplete);
+        }
+
+        // 处理关卡完成消息
+        function handleLevelComplete(event) {
+            const message = event.data;
+
+            if (message === 'level1Complete') {
+                // 第一关完成，直接跳转到第二关
+                startTransition(2);
+            } else if (message === 'level2Complete') {
+                // 第二关完成
+                showLevelCompleteDialog(2);
+            } else if (message === 'returnToMenu') {
+                // 返回主菜单
+                returnToMainMenu();
+            }
+        }
+
+        // 显示关卡完成对话框
+        function showLevelCompleteDialog(level) {
+            const gameFrame = document.getElementById('gameFrame');
+            const overlay = document.getElementById('transitionOverlay');
+
+            // 隐藏游戏iframe
+            gameFrame.style.opacity = '0';
+            setTimeout(() => {
+                gameFrame.style.display = 'none';
+                overlay.classList.remove('active');
+                document.getElementById('transitionAnimation').classList.remove('active');
+
+                // 重置门的状态
+                document.querySelectorAll('.door').forEach(door => {
+                    door.classList.remove('clicked');
+                });
+
+                // 提示用户可以继续下一关或返回
+                const nextLevel = level + 1;
+                if (nextLevel <= 3) {
+                    // 可以在这里显示一个对话框，询问是否继续下一关
+                    // 或者直接返回主菜单让用户选择
+                    returnToMainMenu();
+                } else {
+                    returnToMainMenu();
+                }
+            }, 500);
+        }
+
+        // 返回主菜单
+        function returnToMainMenu() {
+            const gameFrame = document.getElementById('gameFrame');
+            const overlay = document.getElementById('transitionOverlay');
+
+            gameFrame.style.display = 'none';
+            overlay.classList.remove('active');
+            document.getElementById('transitionAnimation').classList.remove('active');
+
+            // 移除门的点击动画类，但保留门的显示
+            document.querySelectorAll('.door').forEach(door => {
+                door.classList.remove('clicked');
+            });
+        }
+
+        // 初始化
+        window.onload = function() {
+            initStars();
+
+            // 检查URL hash，直接进入对应关卡
+            const hash = window.location.hash;
+            if (hash === '#level1') {
+                selectLevel(1);
+            } else if (hash === '#level2') {
+                // 第二关直接跳转到 React 开发服务器
+                window.location.href = 'http://localhost:5173';
+            } else if (hash === '#level3') {
+                selectLevel(3);
+            }
+        };
+    </script>
+</body>
+</html>

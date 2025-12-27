@@ -32,15 +32,11 @@ const ReportPage: React.FC<ReportPageProps> = ({ config, onPlayAgain }) => {
     let staticServerPort = localStorage.getItem('liveServerPort');
 
     if (!staticServerPort) {
-      // 默认使用5500端口（Live Server常用端口）
-      staticServerPort = '5500';
-      localStorage.setItem('liveServerPort', staticServerPort);
+      // 默认使用相对路径跳转
+      const targetUrl = '../pilot/spacetrip_game.html';
     }
 
-    const staticServerUrl = `http://localhost:${staticServerPort}`;
-    const targetUrl = `${staticServerUrl}/pilot/spacetrip_game.html`;
-
-    alert(`即将跳转到第三关：\n${targetUrl}\n\n如果跳转失败，请查看浏览器控制台或检查Live Server是否运行`);
+    alert(`即将跳转到第三关：\n${targetUrl}\n\n即将进入宇宙漫游！`);
     window.location.href = targetUrl;
     console.log('跳转到第三关:', targetUrl);
   };
