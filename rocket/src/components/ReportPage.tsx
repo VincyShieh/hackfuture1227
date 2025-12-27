@@ -23,6 +23,28 @@ const ReportPage: React.FC<ReportPageProps> = ({ config, onPlayAgain }) => {
     soundManager.play('success', 0.6);
   }, []);
 
+  // 跳转到第三关
+  const goToThirdLevel = () => {
+    // React项目运行在localhost:5173，而静态文件（index.html, pilot等）通过Live Server运行
+    // 需要跳转到Live Server的地址
+
+    // 从localStorage读取Live Server端口
+    let staticServerPort = localStorage.getItem('liveServerPort');
+
+    if (!staticServerPort) {
+      // 默认使用5500端口（Live Server常用端口）
+      staticServerPort = '5500';
+      localStorage.setItem('liveServerPort', staticServerPort);
+    }
+
+    const staticServerUrl = `http://localhost:${staticServerPort}`;
+    const targetUrl = `${staticServerUrl}/pilot/spacetrip_game.html`;
+
+    alert(`即将跳转到第三关：\n${targetUrl}\n\n如果跳转失败，请查看浏览器控制台或检查Live Server是否运行`);
+    window.location.href = targetUrl;
+    console.log('跳转到第三关:', targetUrl);
+  };
+
   const handleShare = async () => {
     const shareUrl = encodeConfigToUrl(config);
     const success = await copyToClipboard(shareUrl);
@@ -135,7 +157,7 @@ const ReportPage: React.FC<ReportPageProps> = ({ config, onPlayAgain }) => {
           </button>
 
           <button
-            onClick={() => window.location.href = '/index.html#level3'}
+            onClick={goToThirdLevel}
             className="px-8 py-4 bg-purple-600 hover:bg-purple-700 text-white text-lg font-bold rounded-full shadow-lg transform transition-all duration-300 hover:scale-105 active:scale-95"
           >
             🚀 继续探索-宇宙漫游
