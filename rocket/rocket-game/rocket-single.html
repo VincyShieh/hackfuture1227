@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>小小火箭工程师</title>
+  <style>
+    body { 
+      margin: 0; 
+      padding: 0; 
+      background: #1a1a2e; 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      min-height: 100vh; 
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+      color: white;
+    }
+    canvas { 
+      display: block; 
+      box-shadow: 0 0 20px rgba(0, 150, 255, 0.3);
+    }
+    #start-screen {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: #1e3a5f;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+    #start-btn {
+      margin-top: 30px;
+      padding: 12px 30px;
+      background: #06d6a0;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 20px;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+    #error-msg {
+      color: #ff6b6b;
+      text-align: center;
+      max-width: 80%;
+      margin-top: 20px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div id="start-screen">
+    <h1>🚀 小小火箭工程师</h1>
+    <p>点击下方按钮开始游戏</p>
+    <button id="start-btn">开始游戏</button>
+    <div id="error-msg"></div>
+  </div>
+
+  <!-- 使用本地 CDN 或备用链接 -->
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.87.0/dist/phaser.min.js"></script>
+  <script>
+    let audioContextInitialized = false;
+
+    function initAudio() {
+      if (audioContextInitialized) return;
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        gain.gain.value = 0;
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.01);
+        audioContextInitialized = true;
+      } catch (e) {
+        console.warn("音频初始化失败，静音运行", e);
+        audioContextInitialized = true; // 允许静音继续
+      }
+    }
+
+    // ========== 场景定义 ==========
+    const GAME_CONFIG = {
+      layers: [
+        { speed: 2.0, tolerance: 50 }, // 降低难度，增大容差
+        { speed: 2.5, tolerance: 40 },
+        { speed: 3.0, tolerance: 30 },
+        { speed: 3.5, tolerance: 20 }
+      ],
+      getLayerConfig(layerIndex) {
+        if (layerIndex <= 3) return this.layers[0];
+        if (layerIndex <= 6) return this.layers[1];
+        if (layerIndex <= 9) return this.layers[2];
+        return this.layers[3];
+      }
+    };
+
+    class OperationRoom extends Phaser.Scene {
+      constructor() {
+        super({ key: 'OperationRoom' });
+      }
+
+      preload() {
+        // Preload any assets if needed
+        this.load.image('background', 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==');
+      }
+
+      create() {
+        console.log('OperationRoom scene created');
+        this.add.rectangle(400, 300, 800, 600, 0x1e3a5f).setOrigin(0.5);
+        this.add.text(400, 80, '🚀 火箭装配车间', { fontSize: '32px', fill: '#fff' }).setOrigin(0.5);
+
+        const engineers = [
+          { x: 200, y: 400, color: 0xff6b9d, name: '李工' },
+          { x: 400, y: 420, color: 0x4cc9f0, name: '王工' },
+          { x: 600, y: 400, color: 0xf72585, name: '张工' }
+        ];
+
+        engineers.forEach(e => {
+          this.add.circle(e.x, e.y - 20, 30, e.color).setStrokeStyle(3, 0xffffff);
+          this.add.text(e.x, e.y + 20, e.name, { fill: '#fff', fontSize: '18px' }).setOrigin(0.5);
+          const hitArea = this.add.zone(e.x, e.y - 20, 80, 80).setInteractive({ useHandCursor: true });
+          hitArea.on('pointerdown', () => this.showDialog());
+        });
+      }
+
+      showDialog() {
+        const modal = document.createElement('div');
+        modal.id = 'dialog-modal';
+        modal.innerHTML = `
+          <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:flex;justify-content:center;align-items:center;z-index:9999;">
+            <div style="background:#2c3e50;color:white;padding:25px;border-radius:15px;text-align:center;max-width:85%;box-shadow:0 0 20px rgba(0,100,255,0.5);">
+              <h3 style="margin:0 0 15px;">你好！我是火箭工程师！</h3>
+              <p>你能帮我把"星辰号"火箭一层层搭好吗？成功后你就能穿上工装，飞向太空！</p>
+              <button id="start-task-btn" style="margin-top:20px;padding:10px 25px;background:#06d6a0;color:white;border:none;border-radius:8px;cursor:pointer;font-size:18px;">
+                开始任务
+              </button>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(modal);
+        document.getElementById('start-task-btn').onclick = () => {
+          document.body.removeChild(modal);
+          this.scene.get('RocketBuilder').resetGame();
+          this.scene.start('RocketBuilder');
+        };
+      }
+    }
+
+    class RocketBuilder extends Phaser.Scene {
+      constructor() {
+        super({ key: 'RocketBuilder' });
+      }
+
+      preload() {
+        // Preload any assets if needed
+      }
+
+      resetGame() {
+        this.currentLayer = 0;
+        this.lives = 3;
+        this.rockets = [];
+      }
+
+      create() {
+        console.log('RocketBuilder scene created');
+        this.resetGame();
+        this.add.rectangle(400, 300, 800, 600, 0x2c3e50).setOrigin(0.5);
+        this.add.text(400, 30, '🔧 拼装火箭', { fill: '#fff', fontSize: '24px' }).setOrigin(0.5);
+
+        this.gearIcons = [];
+        for (let i = 0; i < 3; i++) {
+          const x = 40 + i * 50;
+          const gear = this.add.circle(x, 40, 15, 0xfeca57);
+          this.add.line(x, 40, x - 10, 40, x + 10, 40, 0x333).setLineWidth(2);
+          this.add.line(x, 40, x, 30, x, 50, 0x333).setLineWidth(2);
+          this.gearIcons.push(gear);
+        }
+
+        this.layerText = this.add.text(750, 30, '0/10', { fontSize: '22px', fill: '#fff' }).setOrigin(1, 0);
+        
+        // 添加目标区域指示器（初始位置）
+        this.targetZone = this.add.rectangle(400, 500, 100, 20, 0x3498db).setOrigin(0.5).setAlpha(0.3);
+        
+        this.createModule();
+      }
+
+      playSuccessSound() {
+        if (!audioContextInitialized) return;
+        try {
+          const ctx = new (window.AudioContext || window.webkitAudioContext)();
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.value = 800;
+          gain.gain.setValueAtTime(0.15, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.25);
+        } catch (e) { /* 静音 */ }
+      }
+
+      playFailSound() {
+        if (!audioContextInitialized) return;
+        try {
+          const ctx = new (window.AudioContext || window.webkitAudioContext)();
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.value = 180;
+          gain.gain.setValueAtTime(0.1, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.4);
+        } catch (e) { /* 静音 */ }
+      }
+
+      createModule() {
+        const config = GAME_CONFIG.getLayerConfig(this.currentLayer + 1);
+        const isNose = this.currentLayer === 9;
+        const width = isNose ? 60 : 120;
+
+        this.module = this.add.rectangle(
+          400, 550, width, 30,
+          isNose ? 0xff6b6b : 0x4ecdc4
+        ).setOrigin(0.5).setStrokeStyle(2, 0xffffff);
+
+        this.module.speed = config.speed;
+        this.module.direction = 1;
+        this.module.tolerance = config.tolerance;
+        this.module.isNose = isNose;
+
+
+
+        // 使用一次性事件监听，避免重复触发
+        this.input.once('pointerdown', this.placeModule, this);
+      }
+
+      update(time, delta) {
+        if (!this.module) return;
+        this.module.x += this.module.speed * this.module.direction * (delta / 16);
+        if (this.module.x >= 760) {
+          this.module.direction = -1;
+          this.module.x = 760; // 防止超出边界
+        }
+        else if (this.module.x <= 40) {
+          this.module.direction = 1;
+          this.module.x = 40; // 防止超出边界
+        }
+        
+
+      }
+
+      placeModule() {
+        let targetX = 400;
+        if (this.rockets.length > 0) {
+          targetX = this.rockets[this.rockets.length - 1].x;
+        }
+
+        const diff = Math.abs(this.module.x - targetX);
+        const success = diff <= this.module.tolerance;
+        
+        console.log(`放置模块 #${this.currentLayer + 1}: 当前=${Math.round(this.module.x)}, 目标=${targetX}, 差距=${diff}, 容差=${this.module.tolerance}, 成功=${success}`);
+
+
+
+        if (success) {
+          this.playSuccessSound();
+          const newBlock = this.add.rectangle(
+            targetX,
+            520 - this.currentLayer * 40,
+            this.module.width,
+            this.module.height,
+            this.module.isNose ? 0xff6b6b : 0x4ecdc4
+          ).setStrokeStyle(2, 0xffffff);
+          this.rockets.push(newBlock);
+          this.currentLayer++;
+          this.layerText.setText(`${this.currentLayer}/10`);
+
+
+          if (this.currentLayer >= 10) {
+            this.scene.start('VictoryScene');
+            return;
+          }
+
+          this.module.destroy();
+          this.module = null;
+          
+          // 更新目标区域指示器位置
+          if (this.targetZone && this.rockets.length > 0) {
+            this.targetZone.x = targetX;
+          }
+          
+          this.createModule();
+        } else {
+          this.playFailSound();
+          this.lives--;
+          this.updateLives();
+
+
+          if (this.lives <= 0) {
+            this.scene.start('OperationRoom');
+          } else {
+            this.module.destroy();
+            this.module = null;
+            this.createModule();
+          }
+        }
+      }
+
+      updateLives() {
+        this.gearIcons.forEach((gear, i) => {
+          if (gear) gear.setVisible(i < this.lives);
+        });
+      }
+    }
+
+    class VictoryScene extends Phaser.Scene {
+      constructor() {
+        super({ key: 'VictoryScene' });
+      }
+
+      preload() {
+        // Preload any assets if needed
+      }
+
+      create() {
+        console.log('VictoryScene scene created');
+        this.add.rectangle(400, 300, 800, 600, 0x0d1b2a).setOrigin(0.5);
+
+        if (audioContextInitialized) {
+          try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(200, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(900, ctx.currentTime + 2);
+            gain.gain.setValueAtTime(0.2, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 2.2);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 2.2);
+          } catch (e) { /* silent */ }
+        }
+
+        const rocket = this.add.rectangle(400, 600, 80, 200, 0xe76f51).setOrigin(0.5);
+        const nose = this.add.triangle(400, 500, -40, 0, 40, 0, 0, -40, 0xf4a261);
+
+        const particles = this.add.particles(0xffffff);
+        const emitter = particles.createEmitter({
+          x: 400, y: 700,
+          speed: { min: 100, max: 200 },
+          angle: { min: 260, max: 280 },
+          scale: { start: 0.6, end: 0 },
+          quantity: 8,
+          lifespan: 600,
+          blendMode: 'ADD'
+        });
+
+        this.tweens.add({ targets: [rocket, nose], y: -300, duration: 4000, ease: 'Cubic.easeOut' });
+        this.tweens.add({ targets: emitter, y: 600, duration: 4000, ease: 'Cubic.easeOut' });
+
+        this.time.delayedCall(500, () => {
+          this.add.text(400, 100, '👨‍🚀 你穿上了工程师工装！', {
+            fontSize: '28px', fill: '#4cc9f0'
+          }).setOrigin(0.5);
+        });
+
+        this.time.delayedCall(3000, () => {
+          this.add.text(400, 300, '🌟 你成功了！\n未来的宇航工程师！', {
+            fontSize: '32px', fill: '#ffd166', align: 'center'
+          }).setOrigin(0.5);
+
+          const btn1 = this.add.text(400, 420, '继续探索-宇宙漫游', {
+            fontSize: '24px', fill: '#4a9eff', backgroundColor: '#111122', padding: { x: 20, y: 10 }
+          }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+          btn1.on('pointerdown', () => {
+            // 发送消息给父窗口，通知第二关完成
+            if (window.parent !== window) {
+              window.parent.postMessage('level2Complete', '*');
+            } else {
+              // 如果不是在iframe中，直接跳转到第三关
+              window.location.href = '../pilot/spacetrip_game.html';
+            }
+          });
+
+          const btn2 = this.add.text(400, 480, '↺ 返回操作间', {
+            fontSize: '20px', fill: '#06d6a0', backgroundColor: '#111122', padding: { x: 20, y: 10 }
+          }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+          btn2.on('pointerdown', () => this.scene.start('OperationRoom'));
+        });
+      }
+    }
+
+    // ========== 启动游戏 ==========
+    document.getElementById('start-btn').addEventListener('click', () => {
+      initAudio();
+      document.getElementById('start-screen').style.display = 'none';
+
+      // 关键修复：强制使用 CANVAS 渲染器
+      const config = {
+        type: Phaser.CANVAS, // ←←← 强制 Canvas，避免 WebGL 黑屏
+        width: 800,
+        height: 600,
+        scale: {
+          mode: Phaser.Scale.FIT,
+          autoCenter: Phaser.Scale.CENTER_BOTH
+        },
+        scene: [OperationRoom, RocketBuilder, VictoryScene],
+        // 添加错误监听（调试用）
+        callbacks: {
+          postBoot: function (game) {
+            if (!game.renderer) {
+              document.getElementById('error-msg').innerText = '❌ 渲染失败！请尝试刷新页面。';
+              document.getElementById('start-screen').style.display = 'flex';
+            }
+          }
+        }
+      };
+
+      try {
+        window.game = new Phaser.Game(config);
+      } catch (e) {
+        document.getElementById('error-msg').innerText = '❌ 启动失败：' + e.message;
+        document.getElementById('start-screen').style.display = 'flex';
+        console.error(e);
+      }
+    });
+  </script>
+</body>
+</html>
