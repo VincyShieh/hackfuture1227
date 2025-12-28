@@ -34,7 +34,7 @@
 
 ## 游戏关卡
 
-- 第一关：星星的邀约（star/star_date.html）
+- 第一关：星星的邀约（star/dist/index.html）
 - 第二关：启航研究室（rocket-game/index.html）
 - 第三关：宇宙漫游（pilot/game.html）
 
