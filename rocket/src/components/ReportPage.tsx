@@ -31,12 +31,8 @@ const ReportPage: React.FC<ReportPageProps> = ({ config, onPlayAgain }) => {
     // 从localStorage读取Live Server端口
     let staticServerPort = localStorage.getItem('liveServerPort');
 
-    if (!staticServerPort) {
-      // 默认使用相对路径跳转
-      const targetUrl = '../pilot/spacetrip_game.html';
-    }
+    let targetUrl = '../pilot/spacetrip_game.html';
 
-    alert(`即将跳转到第三关：\n${targetUrl}\n\n即将进入宇宙漫游！`);
     window.location.href = targetUrl;
     console.log('跳转到第三关:', targetUrl);
   };

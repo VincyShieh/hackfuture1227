@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>宇宙漫游记</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            overflow: hidden;
+            background: #000;
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="%23FFD700" d="M12 2l2.4 7.4h7.6l-6 4.6 2.3 7-6.3-4.7-6.3 4.7 2.3-7-6-4.6h7.6z"/></svg>') 12 12, auto;
+        }
+
+        #game-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            background: radial-gradient(ellipse at center, #1a1a3e 0%, #000000 100%);
+        }
+
+        .stars {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        .scene {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 1s;
+        }
+
+        .scene.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .character {
+            width: 150px;
+            height: 150px;
+            margin-bottom: 30px;
+            position: relative;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .girl-astronaut {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .astronaut-head {
+            width: 120px;
+            height: 120px;
+            background: #ffe5cc;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 4px solid white;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            overflow: visible;
+        }
+
+        .hair {
+            position: absolute;
+            width: 110px;
+            height: 50px;
+            background: #4a2c2a;
+            border-radius: 50% 50% 0 0;
+            top: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .hair-side-left, .hair-side-right {
+            position: absolute;
+            width: 30px;
+            height: 40px;
+            background: #4a2c2a;
+            border-radius: 50%;
+            top: 20px;
+        }
+
+        .hair-side-left { left: -10px; }
+        .hair-side-right { right: -10px; }
+
+        /* 完整宇航员样式（用于画面五和画面六） */
+        .character.full-body {
+            height: 200px;
+        }
+
+        .full-body .astronaut-head {
+            width: 80px;
+            height: 80px;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .full-body .hair {
+            width: 90px;
+            height: 40px;
+        }
+
+        .full-body .hair-side-left, .full-body .hair-side-right {
+            width: 25px;
+            height: 35px;
+            top: 15px;
+        }
+
+        .full-body .astronaut-helmet {
+            width: 100px;
+            height: 90px;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .full-body .astronaut-face {
+            top: 45px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .astronaut-body {
+            width: 70px;
+            height: 80px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: absolute;
+            top: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 10px 10px 5px 5px;
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        .astronaut-arm {
+            width: 20px;
+            height: 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: absolute;
+            top: 95px;
+            border-radius: 10px;
+        }
+
+        .astronaut-arm.left { 
+            left: 25px; 
+            transform: rotate(-20deg);
+        }
+        .astronaut-arm.right { 
+            right: 25px;
+            transform: rotate(20deg);
+        }
+
+        .astronaut-leg {
+            width: 25px;
+            height: 45px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: absolute;
+            top: 165px;
+            border-radius: 5px 5px 10px 10px;
+        }
+
+        .astronaut-leg.left { left: 40px; }
+        .astronaut-leg.right { right: 40px; }
+
+        .astronaut-helmet {
+            width: 140px;
+            height: 130px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50% 50% 45% 45%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 3px solid rgba(255, 255, 255, 0.8);
+            box-shadow: inset 0 0 20px rgba(102, 126, 234, 0.2);
+        }
+
+        .astronaut-face {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .eye {
+            width: 10px;
+            height: 10px;
+            background: #333;
+            border-radius: 50%;
+            position: absolute;
+            top: 0;
+        }
+
+        .eye.left { left: -15px; }
+        .eye.right { right: -15px; }
+
+        .smile {
+            width: 25px;
+            height: 12px;
+            border: 2px solid #ff6b9d;
+            border-top: none;
+            border-radius: 0 0 25px 25px;
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .dialog-box {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px 40px;
+            max-width: 600px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .dialog-box h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+
+        .dialog-box p {
+            color: #333;
+            line-height: 1.8;
+            margin-bottom: 25px;
+            font-size: 16px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 30px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(102, 126, 234, 0.6);
+        }
+
+        .planet-map {
+            display: flex;
+            gap: 50px;
+            margin: 30px 0;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .planet-icon {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.3s;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .planet-icon:hover {
+            transform: scale(1.15);
+        }
+
+        .planet-icon.mars { 
+            background: radial-gradient(circle, #ff6b4a 0%, #c13b1a 100%);
+            box-shadow: 0 0 30px rgba(255, 107, 74, 0.6);
+        }
+        
+        .planet-icon.jupiter { 
+            background: radial-gradient(circle, #f4d4a8 0%, #d89e5f 100%);
+            box-shadow: 0 0 30px rgba(244, 212, 168, 0.6);
+        }
+        
+        .planet-icon.saturn { 
+            background: radial-gradient(circle, #f9e4b7 0%, #e6c068 100%);
+            box-shadow: 0 0 30px rgba(249, 228, 183, 0.6);
+        }
+
+        .planet-icon::after {
+            content: attr(data-name);
+            position: absolute;
+            bottom: -35px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 18px;
+            font-weight: bold;
+            white-space: nowrap;
+            text-shadow: 0 0 20px currentColor, 0 0 40px currentColor;
+        }
+
+        .planet-icon.mars::after {
+            color: #ff6b4a;
+        }
+
+        .planet-icon.jupiter::after {
+            color: #f4d4a8;
+        }
+
+        .planet-icon.saturn::after {
+            color: #f9e4b7;
+        }
+
+        .planet-view {
+            width: 450px;
+            height: 450px;
+            border-radius: 50%;
+            position: relative;
+            margin: 30px auto;
+            box-shadow: 0 0 80px rgba(255, 255, 255, 0.3);
+            background-size: cover;
+            background-position: center;
+        }
+
+        .planet-view.mars {
+            background: radial-gradient(circle at 35% 35%, #ff8a65 0%, #ff6b4a 30%, #d84315 70%, #bf360c 100%);
+        }
+
+        .planet-view.jupiter {
+            background: radial-gradient(circle at 40% 30%, #ffe082 0%, #ffd54f 20%, #ffb74d 50%, #d89e5f 80%, #8d6e63 100%);
+        }
+
+        .planet-view.saturn {
+            background: radial-gradient(circle at 38% 35%, #fff9c4 0%, #f9e4b7 30%, #f4d4a8 60%, #e6c068 90%);
+            position: relative;
+        }
+
+        .saturn-ring {
+            position: absolute;
+            width: 550px;
+            height: 150px;
+            border: 40px solid rgba(230, 192, 104, 0.6);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotateX(75deg);
+            box-shadow: 0 0 30px rgba(230, 192, 104, 0.4);
+        }
+
+        .hotspot {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            animation: pulse 2s infinite;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        .info-card {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            transition: transform 0.3s;
+        }
+
+        .info-card.show {
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .info-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .info-card p {
+            color: #333;
+            line-height: 1.8;
+            margin-bottom: 20px;
+        }
+
+        .specimen-wall {
+            display: grid;
+            grid-template-columns: repeat(3, 150px);
+            gap: 30px;
+            margin: 30px 0;
+        }
+
+        .specimen {
+            width: 150px;
+            height: 150px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .specimen:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-5px);
+        }
+
+        .specimen.unlocked {
+            border-color: #667eea;
+            box-shadow: 0 0 30px rgba(102, 126, 234, 0.5);
+        }
+
+        .choice-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .choice-btn {
+            background: rgba(102, 126, 234, 0.2);
+            color: white;
+            border: 2px solid #667eea;
+            padding: 15px 30px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+        }
+
+        .choice-btn:hover {
+            background: rgba(102, 126, 234, 0.4);
+            transform: translateX(10px);
+        }
+
+        .nebula {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0;
+            animation: floatNebula 15s ease-in-out infinite;
+        }
+
+        @keyframes floatNebula {
+            0%, 100% { transform: translate(0, 0); opacity: 0; }
+            50% { transform: translate(100px, -100px); opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div class="stars" id="stars"></div>
+
+        <!-- 画面一：关卡开启 -->
+        <div class="scene active" id="scene1">
+            <div class="character">
+                <div class="girl-astronaut">
+                    <div class="astronaut-helmet"></div>
+                    <div class="astronaut-head">
+                        <div class="hair">
+                            <div class="hair-side-left"></div>
+                            <div class="hair-side-right"></div>
+                        </div>
+                        <div class="astronaut-face">
+                            <div class="eye left"></div>
+                            <div class="eye right"></div>
+                            <div class="smile"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="dialog-box">
+                <h2>🌟 星空邀请</h2>
+                <p>呼叫地球小探险家！我是你的太空向导王亚平。我们的宇宙飞船已经充能完毕，准备前往太阳系的几个神秘星球进行科学考察。这次的任务不是竞赛，而是仔细地观察和记录。每颗星球都是宇宙中独一无二的宝石，等你来发现它们的秘密。准备好开始你的星际发现之旅了吗？</p>
+                <button class="btn" onclick="goToScene(2)">启动星际导航！</button>
+            </div>
+        </div>
+
+        <!-- 画面二：准备室 -->
+        <div class="scene" id="scene2">
+            <div class="dialog-box" style="max-width: 800px;">
+                <h2>🚀 科考任务简报</h2>
+                <p style="font-size: 18px; color: #667eea; font-weight: bold; margin-bottom: 15px;">科考任务：探索 3 颗星球，完成你的宇宙标本收集</p>
+                <p style="margin-bottom: 40px;">点击星图上的星球，即可自动驾驶前往。在星球上，请仔细点击你感兴趣的地方进行调查！</p>
+                <div class="planet-map">
+                    <div class="planet-icon mars" data-name="火星" onclick="explorePlanet('mars')"></div>
+                    <div class="planet-icon jupiter" data-name="木星" onclick="explorePlanet('jupiter')"></div>
+                    <div class="planet-icon saturn" data-name="土星" onclick="explorePlanet('saturn')"></div>
+                </div>
+                <button class="btn" onclick="goToScene(3)" style="margin-top: 60px;">穿上宇航服，开始探索！</button>
+            </div>
+        </div>
+
+        <!-- 画面三：星球探索 -->
+        <div class="scene" id="scene3">
+            <div class="dialog-box" style="max-width: 800px;">
+                <h2 id="planet-title">选择一颗星球开始探索</h2>
+                <div class="planet-map">
+                    <div class="planet-icon mars" data-name="火星" onclick="explorePlanet('mars')"></div>
+                    <div class="planet-icon jupiter" data-name="木星" onclick="explorePlanet('jupiter')"></div>
+                    <div class="planet-icon saturn" data-name="土星" onclick="explorePlanet('saturn')"></div>
+                </div>
+                <p id="exploration-status" style="margin-top: 20px;">已探索：<span id="explored-count">0</span>/3 颗星球</p>
+                <button class="btn" id="finish-btn" onclick="goToScene(5)" style="display: none; margin-top: 20px;">返回基地</button>
+            </div>
+        </div>
+
+        <!-- 画面3.5：星球详细探索 -->
+        <div class="scene" id="scene3-detail">
+            <div class="dialog-box" style="max-width: 900px;">
+                <h2 id="planet-detail-title">正在探索...</h2>
+                <p style="color: #888; margin-bottom: 20px;">点击星球上的光点来发现知识！</p>
+                <div id="planet-detail-view"></div>
+                <p style="margin-top: 20px; color: #667eea; font-weight: bold;" id="hotspot-status">发现进度：<span id="discovered-count">0</span>/<span id="total-hotspots">3</span></p>
+                <button class="btn" onclick="goToScene(3)" style="margin-top: 20px;">返回星图</button>
+            </div>
+        </div>
+
+        <!-- 画面四：标本墙 -->
+        <div class="scene" id="scene5">
+            <div class="dialog-box" style="max-width: 700px;">
+                <h2>✨ 宇宙标本墙</h2>
+                <p>恭喜你成为了一名小小的行星科学家！你收集的宇宙知识，是你最宝贵的财富。</p>
+                <div class="specimen-wall" id="specimen-wall">
+                    <div class="specimen" data-planet="mars">
+                        <div style="font-size: 60px;">🔴</div>
+                    </div>
+                    <div class="specimen" data-planet="jupiter">
+                        <div style="font-size: 60px;">🟠</div>
+                    </div>
+                    <div class="specimen" data-planet="saturn">
+                        <div style="font-size: 60px;">🪐</div>
+                    </div>
+                </div>
+                <button class="btn" onclick="goToScene(6)">继续前进</button>
+            </div>
+        </div>
+
+        <!-- 画面五：情感升华 -->
+        <div class="scene" id="scene6">
+            <div class="character full-body">
+                <div class="girl-astronaut">
+                    <div class="astronaut-leg left"></div>
+                    <div class="astronaut-leg right"></div>
+                    <div class="astronaut-arm left"></div>
+                    <div class="astronaut-arm right"></div>
+                    <div class="astronaut-body"></div>
+                    <div class="astronaut-helmet"></div>
+                    <div class="astronaut-head">
+                        <div class="hair">
+                            <div class="hair-side-left"></div>
+                            <div class="hair-side-right"></div>
+                        </div>
+                        <div class="astronaut-face">
+                            <div class="eye left"></div>
+                            <div class="eye right"></div>
+                            <div class="smile"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="dialog-box" style="max-width: 650px;">
+                <h2>🌌 宇宙与自我</h2>
+                <p>在我们广阔的宇宙中，每一颗星球都如此不同，有着自己独特的故事。就像我们每个女孩一样，都是独一无二的。你的独特之处是什么呢？</p>
+                <div class="choice-buttons">
+                    <button class="choice-btn" onclick="makeChoice(1)">🔭 我的好奇心像宇宙一样大！</button>
+                    <button class="choice-btn" onclick="makeChoice(2)">🌍 我像地球一样，关爱身边的每一个朋友</button>
+                    <button class="choice-btn" onclick="makeChoice(3)">⭐ 我正在努力，想成为一颗发光的星星！</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 画面六：结局 -->
+        <div class="scene" id="scene7">
+            <div class="nebula" style="background: radial-gradient(circle, rgba(102, 126, 234, 0.5), transparent); top: 10%; left: 10%;"></div>
+            <div class="nebula" style="background: radial-gradient(circle, rgba(234, 102, 165, 0.5), transparent); top: 50%; right: 10%; animation-delay: 5s;"></div>
+            <div class="nebula" style="background: radial-gradient(circle, rgba(102, 234, 200, 0.5), transparent); bottom: 10%; left: 30%; animation-delay: 10s;"></div>
+            <div class="dialog-box" style="max-width: 650px;">
+                <h2 id="final-message">记住，真正的探索，既指向星辰大海，也指向发现你自己。</h2>
+                <p style="font-size: 20px; margin-top: 30px;">继续前进吧，未来的探险家！🚀✨</p>
+                <button class="btn" onclick="location.reload()" style="margin-top: 30px;">重新开始旅程</button>
+            </div>
+        </div>
+
+        <!-- 信息卡片 -->
+        <div class="info-card" id="info-card">
+            <h3 id="card-title"></h3>
+            <p id="card-content"></p>
+            <button class="btn" onclick="closeCard()">知道了</button>
+        </div>
+    </div>
+
+    <script>
+        // 生成星空
+        const starsContainer = document.getElementById('stars');
+        for (let i = 0; i < 100; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.width = Math.random() * 3 + 'px';
+            star.style.height = star.style.width;
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 100 + '%';
+            star.style.animationDelay = Math.random() * 3 + 's';
+            starsContainer.appendChild(star);
+        }
+
+        const planetData = {
+            mars: {
+                name: '火星',
+                facts: [
+                    { 
+                        title: '奥林匹斯山', 
+                        content: '太阳系最高山峰！高度是珠穆朗玛峰的3倍哦！这里几乎没有空气，非常寒冷。🏔️',
+                        position: { top: '25%', left: '35%' }
+                    },
+                    { 
+                        title: '火星极冠', 
+                        content: '火星两极有冰冠，由水冰和干冰组成，随季节变化而扩大或缩小。❄️',
+                        position: { top: '10%', left: '50%' }
+                    },
+                    { 
+                        title: '红色外表', 
+                        content: '火星看起来是红色的，因为它的表面富含氧化铁，就像生锈的铁一样！🔴',
+                        position: { top: '50%', left: '70%' }
+                    }
+                ]
+            },
+            jupiter: {
+                name: '木星',
+                facts: [
+                    { 
+                        title: '大红斑', 
+                        content: '一个超级大风暴！已经刮了至少350年，大到可以装下整个地球。🌪️',
+                        position: { top: '45%', left: '30%' }
+                    },
+                    { 
+                        title: '气态巨星', 
+                        content: '木星没有固体表面，完全由气体组成。如果你想站在上面，会直接掉下去！☁️',
+                        position: { top: '30%', left: '60%' }
+                    },
+                    { 
+                        title: '卫星之王', 
+                        content: '木星有79颗已知卫星，其中4颗最大的卫星是伽利略发现的，叫做伽利略卫星。🌙',
+                        position: { top: '65%', left: '55%' }
+                    }
+                ]
+            },
+            saturn: {
+                name: '土星',
+                facts: [
+                    { 
+                        title: '行星环', 
+                        content: '这些光环主要是由冰块和岩石组成的，像给土星穿上了一条闪闪发光的裙子。✨',
+                        position: { top: '30%', left: '20%' }
+                    },
+                    { 
+                        title: '密度最小', 
+                        content: '土星的密度比水还小！如果有一个足够大的游泳池，土星可以浮在水面上。🏊',
+                        position: { top: '50%', left: '50%' }
+                    },
+                    { 
+                        title: '六边形风暴', 
+                        content: '土星北极有一个神奇的六边形风暴，科学家至今还在研究为什么会是这个形状。⬡',
+                        position: { top: '20%', left: '65%' }
+                    }
+                ]
+            }
+        };
+
+        let exploredPlanets = new Set();
+        let currentPlanet = null;
+        let discoveredHotspots = new Set();
+
+        function goToScene(sceneNum) {
+            document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
+            setTimeout(() => {
+                const sceneId = sceneNum === 3.5 ? 'scene3-detail' : 'scene' + sceneNum;
+                document.getElementById(sceneId).classList.add('active');
+            }, 300);
+        }
+
+        function explorePlanet(planet) {
+            currentPlanet = planet;
+            discoveredHotspots.clear();
+            
+            // 更新标题
+            document.getElementById('planet-detail-title').textContent = '探索' + planetData[planet].name;
+            
+            // 创建星球视图
+            const planetView = document.getElementById('planet-detail-view');
+            planetView.innerHTML = '';
+            
+            const planetDiv = document.createElement('div');
+            planetDiv.className = 'planet-view ' + planet;
+            
+            // 如果是土星，添加行星环
+            if (planet === 'saturn') {
+                const ring = document.createElement('div');
+                ring.className = 'saturn-ring';
+                planetDiv.appendChild(ring);
+            }
+            
+            // 添加热点
+            planetData[planet].facts.forEach((fact, index) => {
+                const hotspot = document.createElement('div');
+                hotspot.className = 'hotspot';
+                hotspot.textContent = '✨';
+                hotspot.style.top = fact.position.top;
+                hotspot.style.left = fact.position.left;
+                hotspot.dataset.index = index;
+                hotspot.onclick = function() {
+                    discoverHotspot(planet, index);
+                };
+                planetDiv.appendChild(hotspot);
+            });
+            
+            planetView.appendChild(planetDiv);
+            
+            // 更新进度
+            document.getElementById('discovered-count').textContent = '0';
+            document.getElementById('total-hotspots').textContent = planetData[planet].facts.length;
+            
+            goToScene(3.5);
+        }
+
+        function discoverHotspot(planet, index) {
+            const fact = planetData[planet].facts[index];
+            discoveredHotspots.add(index);
+            
+            // 更新进度
+            document.getElementById('discovered-count').textContent = discoveredHotspots.size;
+            
+            // 显示信息卡
+            showInfoCard(fact.title, fact.content);
+            
+            // 隐藏已点击的热点
+            const hotspots = document.querySelectorAll('.hotspot');
+            hotspots[index].style.opacity = '0.3';
+            hotspots[index].style.pointerEvents = 'none';
+            
+            // 如果全部发现，标记星球为已探索
+            if (discoveredHotspots.size === planetData[planet].facts.length) {
+                setTimeout(() => {
+                    exploredPlanets.add(planet);
+                    updateExplorationStatus();
+                    alert(`${planetData[planet].name}数据采集完毕！🎉`);
+                }, 500);
+            }
+        }
+
+        function showInfoCard(title, content) {
+            document.getElementById('card-title').textContent = title;
+            document.getElementById('card-content').textContent = content;
+            document.getElementById('info-card').classList.add('show');
+        }
+
+        function closeCard() {
+            document.getElementById('info-card').classList.remove('show');
+        }
+
+        function updateExplorationStatus() {
+            document.getElementById('explored-count').textContent = exploredPlanets.size;
+            
+            if (exploredPlanets.size === 3) {
+                document.getElementById('finish-btn').style.display = 'inline-block';
+                
+                // 更新标本墙
+                exploredPlanets.forEach(planet => {
+                    const specimen = document.querySelector(`.specimen[data-planet="${planet}"]`);
+                    if (specimen) {
+                        specimen.classList.add('unlocked');
+                    }
+                });
+            }
+        }
+
+        function makeChoice(choice) {
+            const messages = [
+                "你的好奇心将带你探索无限的可能！",
+                "你的关爱让这个世界更加温暖！",
+                "每一颗星星都曾是一粒尘埃，坚持就会发光！"
+            ];
+            
+            document.getElementById('final-message').textContent = messages[choice - 1];
+            
+            setTimeout(() => {
+                goToScene(7);
+            }, 100);
+        }
+
+        // 让标本墙的星球可以点击查看信息
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.specimen').forEach(specimen => {
+                specimen.addEventListener('click', function() {
+                    if (this.classList.contains('unlocked')) {
+                        const planet = this.dataset.planet;
+                        const info = planetData[planet];
+                        let content = info.facts.map(f => `${f.title}: ${f.content}`).join('\n\n');
+                        showInfoCard(info.name + ' 知识回顾', content);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
