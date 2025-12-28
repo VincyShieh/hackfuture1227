@@ -8,7 +8,7 @@ import svgr from "vite-plugin-svgr";
 export default defineConfig({
   plugins: [
     react(),
-    miaodaDevPlugin(),
+    // miaodaDevPlugin(), // 禁用此插件以避免外部CDN字体依赖
     svgr({
       svgrOptions: {
         icon: true,
