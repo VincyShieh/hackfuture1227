@@ -31,7 +31,7 @@ const ReportPage: React.FC<ReportPageProps> = ({ config, onPlayAgain }) => {
     // 从localStorage读取Live Server端口
     let staticServerPort = localStorage.getItem('liveServerPort');
 
-    let targetUrl = '../pilot/spacetrip_game.html';
+    let targetUrl = '../pilot/game.html';
 
     window.location.href = targetUrl;
     console.log('跳转到第三关:', targetUrl);
